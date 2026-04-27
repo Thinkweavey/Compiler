@@ -4,7 +4,7 @@ import java.util.Set;
 
 public final class KeywordTable {
     private static final Set<String> KEYWORDS = Set.of(
-            "if", "else", "while", "do", "break", "true", "false",
+            "if", "else", "while", "do", "break",
             "int", "float", "bool", "program"
     );
 
