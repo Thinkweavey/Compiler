@@ -15,9 +15,32 @@ public class ParsingTable {
         String mapKey = key(state, terminal);
         ActionEntry existing = action.get(mapKey);
         if (existing != null && !existing.equals(entry)) {
+            ActionEntry resolved = resolveShiftReduceConflict(terminal, existing, entry);
+            if (resolved != null) {
+                action.put(mapKey, resolved);
+                return;
+            }
             conflicts.put(mapKey, existing.display() + " -> " + entry.display());
         }
         action.put(mapKey, entry);
+    }
+
+    /**
+     * 悬空 else：对 lookahead 为 else 的 shift/reduce 冲突，优先移进（绑定最近 if）。
+     */
+    private static ActionEntry resolveShiftReduceConflict(String terminal, ActionEntry existing, ActionEntry incoming) {
+        if (!"else".equals(terminal)) {
+            return null;
+        }
+        boolean existingShift = existing.type() == ActionEntry.ActionType.SHIFT;
+        boolean incomingShift = incoming.type() == ActionEntry.ActionType.SHIFT;
+        if (existingShift && !incomingShift) {
+            return existing;
+        }
+        if (incomingShift && !existingShift) {
+            return incoming;
+        }
+        return null;
     }
 
     public void putGoto(int state, String nonTerminal, GotoEntry entry) {
@@ -53,21 +76,29 @@ public class ParsingTable {
         return !conflicts.isEmpty();
     }
 
+    public int actionCount() {
+        return action.size();
+    }
+
+    public int gotoCount() {
+        return goTo.size();
+    }
+
     public List<String> exportRows() {
         List<String> actionRows = action.entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
-                .map(entry -> "ACTION[" + entry.getKey() + "] = " + entry.getValue().display())
+                .map(entry -> formatTableRow("ACTION", entry.getKey(), entry.getValue().display()))
                 .toList();
         List<String> gotoRows = goTo.entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
-                .map(entry -> "GOTO[" + entry.getKey() + "] = " + entry.getValue().display())
+                .map(entry -> formatTableRow("GOTO", entry.getKey(), entry.getValue().display()))
                 .toList();
         List<String> conflictRows = conflicts.entrySet()
                 .stream()
                 .sorted(Map.Entry.comparingByKey())
-                .map(entry -> "CONFLICT[" + entry.getKey() + "] = " + entry.getValue())
+                .map(entry -> formatTableRow("CONFLICT", entry.getKey(), entry.getValue()))
                 .toList();
         return List.copyOf(
                 List.of(
@@ -84,6 +115,17 @@ public class ParsingTable {
 
     private String key(int state, String symbol) {
         return state + "::" + symbol;
+    }
+
+    /** 使用 (状态, 符号) 形式，避免 [ ] 与方括号定界符混淆。 */
+    private static String formatTableRow(String kind, String mapKey, String value) {
+        int sep = mapKey.indexOf("::");
+        if (sep < 0) {
+            return kind + "(" + mapKey + ") = " + value;
+        }
+        String state = mapKey.substring(0, sep);
+        String symbol = mapKey.substring(sep + 2);
+        return kind + "(" + state + ", " + symbol + ") = " + value;
     }
 }
 

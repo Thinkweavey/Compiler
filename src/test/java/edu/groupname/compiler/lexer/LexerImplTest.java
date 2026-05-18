@@ -89,6 +89,22 @@ class LexerImplTest {
     }
 
     @Test
+    void analyzeBuildsSymbolTableInFirstAppearanceOrder() {
+        LexicalAnalyzerResult result = lexer.analyze("{ int a; int b; a = b; }");
+
+        assertFalse(result.hasErrors());
+        assertEquals(List.of("a", "b"), result.symbols().stream().map(symbol -> symbol.name()).toList());
+    }
+
+    @Test
+    void analyzeFormatsTokenCategoryForExperimentOutput() {
+        LexicalAnalyzerResult result = lexer.analyze("int a;");
+        Token intToken = result.tokens().get(0);
+
+        assertEquals("(int, 关键字)", edu.groupname.compiler.lexer.LexicalReporter.formatTuple(intToken));
+    }
+
+    @Test
     void analyzeAlwaysAppendsSingleEofPerCall() {
         LexicalAnalyzerResult first = lexer.analyze("int a;");
         LexicalAnalyzerResult second = lexer.analyze("int b;");

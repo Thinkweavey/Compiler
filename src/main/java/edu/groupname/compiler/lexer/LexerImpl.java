@@ -6,6 +6,7 @@ import edu.groupname.compiler.common.error.LexicalError;
 import edu.groupname.compiler.common.token.KeywordTable;
 import edu.groupname.compiler.common.token.Token;
 import edu.groupname.compiler.common.token.TokenType;
+import edu.groupname.compiler.symbol.ScopedSymbolTable;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -17,14 +18,15 @@ public class LexerImpl implements Lexer {
     public LexicalAnalyzerResult analyze(String sourceCode) {
         List<Token> tokens = new ArrayList<>();
         List<CompileError> errors = new ArrayList<>();
-        String source = sourceCode == null ? "" : sourceCode;
+        ScopedSymbolTable symbolTable = new ScopedSymbolTable();
+        SourceBuffer buffer = new SourceBuffer(sourceCode);
 
         int index = 0;
         int line = 1;
         int column = 1;
 
-        while (index < source.length()) {
-            char ch = source.charAt(index);
+        while (index < buffer.length()) {
+            char ch = buffer.charAt(index);
 
             if (Character.isWhitespace(ch)) {
                 if (ch == '\n') {
@@ -37,12 +39,12 @@ public class LexerImpl implements Lexer {
                 continue;
             }
 
-            if (ch == '/' && index + 1 < source.length()) {
-                char next = source.charAt(index + 1);
+            if (ch == '/' && index + 1 < buffer.length()) {
+                char next = buffer.charAt(index + 1);
                 if (next == '/') {
                     index += 2;
                     column += 2;
-                    while (index < source.length() && source.charAt(index) != '\n') {
+                    while (index < buffer.length() && buffer.charAt(index) != '\n') {
                         index++;
                         column++;
                     }
@@ -53,15 +55,15 @@ public class LexerImpl implements Lexer {
                     index += 2;
                     column += 2;
                     boolean closed = false;
-                    while (index < source.length()) {
-                        char current = source.charAt(index);
+                    while (index < buffer.length()) {
+                        char current = buffer.charAt(index);
                         if (current == '\n') {
                             line++;
                             column = 1;
                             index++;
                             continue;
                         }
-                        if (current == '*' && index + 1 < source.length() && source.charAt(index + 1) == '/') {
+                        if (current == '*' && index + 1 < buffer.length() && buffer.charAt(index + 1) == '/') {
                             index += 2;
                             column += 2;
                             closed = true;
@@ -81,16 +83,17 @@ public class LexerImpl implements Lexer {
 
             if (isIdentifierStart(ch)) {
                 int start = index;
-                while (index < source.length() && isIdentifierPart(source.charAt(index))) {
+                while (index < buffer.length() && isIdentifierPart(buffer.charAt(index))) {
                     index++;
                     column++;
                 }
-                String lexeme = source.substring(start, index);
+                String lexeme = buffer.substring(start, index);
                 if ("true".equals(lexeme) || "false".equals(lexeme)) {
                     tokens.add(new Token(TokenType.BOOLEAN_LITERAL, lexeme, position));
                 } else if (KeywordTable.isKeyword(lexeme)) {
                     tokens.add(new Token(TokenType.KEYWORD, lexeme, position));
                 } else {
+                    symbolTable.registerIdentifier(lexeme);
                     tokens.add(new Token(TokenType.IDENTIFIER, lexeme, position));
                 }
                 continue;
@@ -98,18 +101,18 @@ public class LexerImpl implements Lexer {
 
             if (Character.isDigit(ch)) {
                 int start = index;
-                while (index < source.length() && Character.isDigit(source.charAt(index))) {
+                while (index < buffer.length() && Character.isDigit(buffer.charAt(index))) {
                     index++;
                     column++;
                 }
 
                 TokenType numberType = TokenType.INTEGER_LITERAL;
-                if (index < source.length() && source.charAt(index) == '.') {
-                    if (index + 1 < source.length() && Character.isDigit(source.charAt(index + 1))) {
+                if (index < buffer.length() && buffer.charAt(index) == '.') {
+                    if (index + 1 < buffer.length() && Character.isDigit(buffer.charAt(index + 1))) {
                         numberType = TokenType.REAL_LITERAL;
                         index++;
                         column++;
-                        while (index < source.length() && Character.isDigit(source.charAt(index))) {
+                        while (index < buffer.length() && Character.isDigit(buffer.charAt(index))) {
                             index++;
                             column++;
                         }
@@ -118,12 +121,12 @@ public class LexerImpl implements Lexer {
                     }
                 }
 
-                tokens.add(new Token(numberType, source.substring(start, index), position));
+                tokens.add(new Token(numberType, buffer.substring(start, index), position));
                 continue;
             }
 
-            if (index + 1 < source.length()) {
-                String twoChars = source.substring(index, index + 2);
+            if (index + 1 < buffer.length()) {
+                String twoChars = buffer.substring(index, index + 2);
                 if (isDoubleCharOperator(twoChars)) {
                     tokens.add(new Token(TokenType.OPERATOR, twoChars, position));
                     index += 2;
@@ -156,7 +159,11 @@ public class LexerImpl implements Lexer {
             tokens.add(new Token(TokenType.EOF, EOF_LEXEME, eofPosition));
         }
 
-        return new LexicalAnalyzerResult(List.copyOf(tokens), List.copyOf(errors));
+        return new LexicalAnalyzerResult(
+                List.copyOf(tokens),
+                List.copyOf(errors),
+                symbolTable.symbolsInOrder()
+        );
     }
 
     private static boolean isIdentifierStart(char ch) {
