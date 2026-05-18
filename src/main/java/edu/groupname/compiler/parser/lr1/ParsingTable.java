@@ -1,26 +1,85 @@
 package edu.groupname.compiler.parser.lr1;
 
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 public class ParsingTable {
     private final Map<String, ActionEntry> action = new HashMap<>();
     private final Map<String, GotoEntry> goTo = new HashMap<>();
+    private final Map<String, String> conflicts = new LinkedHashMap<>();
 
     public void putAction(int state, String terminal, ActionEntry entry) {
-        action.put(key(state, terminal), entry);
+        String mapKey = key(state, terminal);
+        ActionEntry existing = action.get(mapKey);
+        if (existing != null && !existing.equals(entry)) {
+            conflicts.put(mapKey, existing.display() + " -> " + entry.display());
+        }
+        action.put(mapKey, entry);
     }
 
     public void putGoto(int state, String nonTerminal, GotoEntry entry) {
-        goTo.put(key(state, nonTerminal), entry);
+        String mapKey = key(state, nonTerminal);
+        GotoEntry existing = goTo.get(mapKey);
+        if (existing != null && !existing.equals(entry)) {
+            conflicts.put(mapKey, existing.display() + " -> " + entry.display());
+        }
+        goTo.put(mapKey, entry);
     }
 
     public ActionEntry getAction(int state, String terminal) {
-        return action.getOrDefault(key(state, terminal), new ActionEntry(ActionEntry.ActionType.ERROR, -1));
+        return action.getOrDefault(key(state, terminal), ActionEntry.error());
     }
 
     public GotoEntry getGoto(int state, String nonTerminal) {
         return goTo.get(key(state, nonTerminal));
+    }
+
+    public Map<String, ActionEntry> actionEntries() {
+        return Map.copyOf(action);
+    }
+
+    public Map<String, GotoEntry> gotoEntries() {
+        return Map.copyOf(goTo);
+    }
+
+    public Map<String, String> conflicts() {
+        return Map.copyOf(conflicts);
+    }
+
+    public boolean hasConflict() {
+        return !conflicts.isEmpty();
+    }
+
+    public List<String> exportRows() {
+        List<String> actionRows = action.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> "ACTION[" + entry.getKey() + "] = " + entry.getValue().display())
+                .toList();
+        List<String> gotoRows = goTo.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> "GOTO[" + entry.getKey() + "] = " + entry.getValue().display())
+                .toList();
+        List<String> conflictRows = conflicts.entrySet()
+                .stream()
+                .sorted(Map.Entry.comparingByKey())
+                .map(entry -> "CONFLICT[" + entry.getKey() + "] = " + entry.getValue())
+                .toList();
+        return List.copyOf(
+                List.of(
+                        actionRows,
+                        gotoRows,
+                        conflictRows
+                ).stream().flatMap(List::stream).collect(Collectors.toList())
+        );
+    }
+
+    public String toPrettyString() {
+        return String.join(System.lineSeparator(), exportRows());
     }
 
     private String key(int state, String symbol) {
