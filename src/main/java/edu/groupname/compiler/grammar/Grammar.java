@@ -38,7 +38,7 @@ public record Grammar(String startSymbol, Set<String> terminals, Set<String> non
                 Production.of("stmt", "do", "stmt", "while", "(", "boolExpr", ")", ";"),
                 Production.of("stmt", "break", ";"),
                 Production.of("stmt", "block"),
-                Production.of("loc", "loc", "[", "num", "]"),
+                Production.of("loc", "loc", "[", "boolExpr", "]"),
                 Production.of("loc", "id"),
                 Production.of("boolExpr", "boolExpr", "||", "join"),
                 Production.of("boolExpr", "join"),

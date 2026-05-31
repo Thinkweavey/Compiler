@@ -1,0 +1,523 @@
+
+
+
+编译系统设计实践实验报告
+
+实验一：词法分析程序实验
+
+学    号：  ________________
+姓    名：  ________________
+年    级：  ________________
+学    院：  ________________
+专    业：  ________________
+
+实验时间：2025—2026 学年第二学期
+授 课 教 师：________________
+
+一、实验目的与任务
+从源程序识别关键字、标识符、常数、运算符、分隔符；以 (单词名称, 单词类别) 输出；删除注释与空白；定位词法错误；建立并按顺序打印符号表。本实验实现位于包 edu.groupname.compiler.lexer。
+二、功能描述
+本程序（LexerImpl 及配套类）实现课程实验一词法分析器，具体功能如下：
+分隔单词并以二元组 (单词名称, 单词类别) 输出，类别由 TokenCategoryLabel 转为中文（关键字、标识符、整数、实数、布尔常数、运算符、分隔符）。
+删除 // 行注释、/* */ 块注释及空格、制表符、换行，不生成对应 token。
+建立 ScopedSymbolTable：标识符首次出现时 registerIdentifier；扫描结束后 LexicalDeclarationBinder 根据 int/float/bool 声明绑定类型，并按顺序打印。
+词法错误：非法字符、未闭合块注释、实数点后无数字等，通过 LexicalError 携带 SourcePosition（行、列）。
+演示入口 ExperimentDemo 在 CompilerApplication 运行时输出「实验一：词法分析」小节。
+三、程序结构描述
+3.1 函数/方法说明（参数含义、返回值、功能）
+
+3.2 函数调用关系图
+下图与工程调用链一致：main 经 CompilerPipeline 调用 LexerImpl.analyze，再经 ExperimentDemo 调用 LexicalReporter 输出。
+
+图1  词法分析模块函数调用关系图
+
+3.3 程序总体执行流程图
+下图对应 LexerImpl.analyze 中 while 循环及各分支（与源码第 28～168 行一致）。
+
+图2  LexerImpl.analyze 总体执行流程图
+
+四、符号表的设计和结构
+4.1 设计思想
+registerIdentifier(String name)：在 LexerImpl 识别到普通标识符时调用，仅首次出现加入 definitionOrder。
+初始 Symbol 的 typeName 为「待声明」，kind 为 VARIABLE。
+bindDeclarations 遍历 token，识别 KEYWORD 为 int/float/bool 后的 IDENTIFIER 或 int[num] id 模式，调用 bindDeclaration 更新类型（含 int[] 与 arrayLength）。
+4.2 符号表项结构（Symbol record）
+
+输出示例：(a, int, VARIABLE)；(arr, int[], ARRAY, len=10)。
+五、有限状态自动机与缓冲区（简要）
+SourceBuffer 提供字符缓冲区；LexerImpl 用直接编码实现 DFA（START、注释态、IN_ID、IN_NUM/IN_REAL、ERROR 等），与教材第 3 章一致。
+六、程序关键源代码
+以下摘录自本工程 src/main/java/edu/groupname/compiler/lexer 与 symbol 包，与仓库代码一致。
+6.1 LexerImpl.analyze 入口（第 17～29 行）
+    @Override
+    public LexicalAnalyzerResult analyze(String sourceCode) {
+        List<Token> tokens = new ArrayList<>();
+        List<CompileError> errors = new ArrayList<>();
+        ScopedSymbolTable symbolTable = new ScopedSymbolTable();
+        SourceBuffer buffer = new SourceBuffer(sourceCode);
+
+        int index = 0;
+        int line = 1;
+        int column = 1;
+
+        while (index < buffer.length()) {
+            char ch = buffer.charAt(index);
+6.2 空白与注释处理（第 31～79 行）
+            if (Character.isWhitespace(ch)) {
+                if (ch == '\n') {
+                    line++;
+                    column = 1;
+                } else {
+                    column++;
+                }
+                index++;
+                continue;
+            }
+
+            if (ch == '/' && index + 1 < buffer.length()) {
+                char next = buffer.charAt(index + 1);
+                if (next == '/') {
+                    index += 2;
+                    column += 2;
+                    while (index < buffer.length() && buffer.charAt(index) != '\n') {
+                        index++;
+                        column++;
+                    }
+                    continue;
+                }
+                if (next == '*') {
+                    SourcePosition commentStart = new SourcePosition(line, column);
+                    index += 2;
+                    column += 2;
+                    boolean closed = false;
+                    while (index < buffer.length()) {
+                        char current = buffer.charAt(index);
+                        if (current == '\n') {
+                            line++;
+                            column = 1;
+                            index++;
+                            continue;
+                        }
+                        if (current == '*' && index + 1 < buffer.length() && buffer.charAt(index + 1) == '/') {
+                            index += 2;
+                            column += 2;
+                            closed = true;
+                            break;
+                        }
+                        index++;
+                        column++;
+                    }
+                    if (!closed) {
+                        errors.add(new LexicalError("Unterminated block comment", commentStart));
+                    }
+                    continue;
+                }
+6.3 标识符与关键字（第 84～99 行）
+            if (isIdentifierStart(ch)) {
+                int start = index;
+                while (index < buffer.length() && isIdentifierPart(buffer.charAt(index))) {
+                    index++;
+                    column++;
+                }
+                String lexeme = buffer.substring(start, index);
+                if ("true".equals(lexeme) || "false".equals(lexeme)) {
+                    tokens.add(new Token(TokenType.BOOLEAN_LITERAL, lexeme, position));
+                } else if (KeywordTable.isKeyword(lexeme)) {
+                    tokens.add(new Token(TokenType.KEYWORD, lexeme, position));
+                } else {
+                    symbolTable.registerIdentifier(lexeme);
+                    tokens.add(new Token(TokenType.IDENTIFIER, lexeme, position));
+                }
+                continue;
+6.4 常数、运算符、分隔符与错误（第 102～155 行）
+            if (Character.isDigit(ch)) {
+                int start = index;
+                while (index < buffer.length() && Character.isDigit(buffer.charAt(index))) {
+                    index++;
+                    column++;
+                }
+
+                TokenType numberType = TokenType.INTEGER_LITERAL;
+                if (index < buffer.length() && buffer.charAt(index) == '.') {
+                    if (index + 1 < buffer.length() && Character.isDigit(buffer.charAt(index + 1))) {
+                        numberType = TokenType.REAL_LITERAL;
+                        index++;
+                        column++;
+                        while (index < buffer.length() && Character.isDigit(buffer.charAt(index))) {
+                            index++;
+                            column++;
+                        }
+                    } else {
+                        errors.add(new LexicalError("Malformed real literal: '.' must be followed by digits", new SourcePosition(line, column)));
+                    }
+                }
+
+                tokens.add(new Token(numberType, buffer.substring(start, index), position));
+                continue;
+            }
+
+            if (index + 1 < buffer.length()) {
+                String twoChars = buffer.substring(index, index + 2);
+                if (isDoubleCharOperator(twoChars)) {
+                    tokens.add(new Token(TokenType.OPERATOR, twoChars, position));
+                    index += 2;
+                    column += 2;
+                    continue;
+                }
+            }
+
+            if (isSingleCharOperator(ch)) {
+                tokens.add(new Token(TokenType.OPERATOR, String.valueOf(ch), position));
+                index++;
+                column++;
+                continue;
+            }
+
+            if (isDelimiter(ch)) {
+                tokens.add(new Token(TokenType.DELIMITER, String.valueOf(ch), position));
+                index++;
+                column++;
+                continue;
+            }
+
+            errors.add(new LexicalError("Illegal character: '" + ch + "'", position));
+            index++;
+            column++;
+        }
+6.5 结束与返回（第 157～168 行）
+        SourcePosition eofPosition = new SourcePosition(line, column);
+        if (tokens.isEmpty() || tokens.get(tokens.size() - 1).type() != TokenType.EOF) {
+            tokens.add(new Token(TokenType.EOF, EOF_LEXEME, eofPosition));
+        }
+
+        LexicalDeclarationBinder.bindDeclarations(tokens, symbolTable);
+
+        return new LexicalAnalyzerResult(
+                List.copyOf(tokens),
+                List.copyOf(errors),
+                symbolTable.symbolsInOrder()
+        );
+6.6 SourceBuffer.java（第 6～26 行）
+final class SourceBuffer {
+    private final char[] data;
+    private final int length;
+
+    SourceBuffer(String source) {
+        String normalized = source == null ? "" : source;
+        this.data = normalized.toCharArray();
+        this.length = data.length;
+    }
+
+    int length() {
+        return length;
+    }
+
+    char charAt(int index) {
+        return data[index];
+    }
+
+    String substring(int start, int end) {
+        return new String(data, start, end - start);
+    }
+6.7 LexicalDeclarationBinder.bindDeclarations（第 20～50 行）
+    public static void bindDeclarations(List<Token> tokens, ScopedSymbolTable symbolTable) {
+        for (int i = 0; i < tokens.size(); i++) {
+            Token token = tokens.get(i);
+            if (token.type() != TokenType.KEYWORD || !BASIC_TYPES.contains(token.lexeme())) {
+                continue;
+            }
+            String baseType = token.lexeme();
+            int next = i + 1;
+            if (next >= tokens.size()) {
+                continue;
+            }
+            if (tokens.get(next).type() == TokenType.IDENTIFIER) {
+                symbolTable.bindDeclaration(tokens.get(next).lexeme(), baseType, SymbolKind.VARIABLE);
+                i = next;
+                continue;
+            }
+            if (isDelimiter(tokens.get(next), "[")) {
+                int lengthTokenIndex = next + 1;
+                Integer arrayLength = null;
+                if (lengthTokenIndex < tokens.size()
+                        && tokens.get(lengthTokenIndex).type() == TokenType.INTEGER_LITERAL) {
+                    arrayLength = Integer.parseInt(tokens.get(lengthTokenIndex).lexeme());
+                }
+                int afterBracket = skipArraySuffix(tokens, next + 1);
+                if (afterBracket < tokens.size() && tokens.get(afterBracket).type() == TokenType.IDENTIFIER) {
+                    String name = tokens.get(afterBracket).lexeme();
+                    symbolTable.bindDeclaration(name, baseType + "[]", SymbolKind.ARRAY, arrayLength);
+                    i = afterBracket;
+                }
+            }
+        }
+6.8 LexicalReporter.formatTuple（第 15～24 行）
+    public static List<String> formatTokenTuples(List<Token> tokens) {
+        return tokens.stream()
+                .filter(token -> token.type() != TokenType.EOF)
+                .map(LexicalReporter::formatTuple)
+                .collect(Collectors.toList());
+    }
+
+    public static String formatTuple(Token token) {
+        return "(" + token.lexeme() + ", " + TokenCategoryLabel.of(token.type()) + ")";
+    }
+6.9 ScopedSymbolTable.registerIdentifier / bindDeclaration（第 30～55 行）
+    public void registerIdentifier(String name) {
+        Map<String, Symbol> currentScope = scopes.peek();
+        if (currentScope != null && !currentScope.containsKey(name)) {
+            currentScope.put(name, new Symbol(name, "待声明", SymbolKind.VARIABLE));
+            definitionOrder.add(currentScope.get(name));
+        }
+    }
+
+    /**
+     * 根据声明语句绑定标识符类型（词法后处理或扫描 int/float/bool id; 模式）。
+     */
+    public void bindDeclaration(String name, String typeName, SymbolKind kind) {
+        bindDeclaration(name, typeName, kind, null);
+    }
+
+    public void bindDeclaration(String name, String typeName, SymbolKind kind, Integer arrayLength) {
+        Symbol updated = new Symbol(name, typeName, kind, arrayLength);
+        for (Map<String, Symbol> scope : scopes) {
+            if (scope.containsKey(name)) {
+                scope.put(name, updated);
+                replaceInDefinitionOrder(name, updated);
+                return;
+            }
+        }
+        define(updated);
+    }
+七、测试数据与运行结果
+以下 7 组数据均来自工程样例源程序 samples/*.src，经 CompilerApplication 运行后由 scripts/export-test-outputs.ps1 导出；词法部分摘自 docs/test-output/*.txt 中「实验一：词法分析」章节（与控制台输出一致），未另行编造。
+复现命令（Compiler 目录）：powershell -ExecutionPolicy Bypass -File .\scripts\export-test-outputs.ps1
+注：右括号「)」的二元组格式为 ( , 分隔符) 时写作「(), 分隔符)」（左括号与 lexeme 相连），与 LexicalReporter.formatTuple 输出一致。
+测试组 1：基础声明与赋值（sample1_basic）
+输入（samples/sample1_basic.src）：
+{ int a; a = 1; }
+运行结果（摘自 docs/test-output/sample1_basic.txt「实验一」章节）：
+({, 分隔符)
+(int, 关键字)
+(a, 标识符)
+(;, 分隔符)
+(a, 标识符)
+(=, 运算符)
+(1, 整数)
+(;, 分隔符)
+(}, 分隔符)
+符号表：
+(a, int, VARIABLE)
+测试组 2：if-else 与双字符运算符（sample2_if_else）
+输入（samples/sample2_if_else.src）：
+{
+  int x;
+  if (x >= 0) x = x + 1;
+  else x = 0;
+}
+运行结果（摘自 docs/test-output/sample2_if_else.txt「实验一」章节）：
+({, 分隔符)
+(int, 关键字)
+(x, 标识符)
+(;, 分隔符)
+(if, 关键字)
+((, 分隔符)
+(x, 标识符)
+(>=, 运算符)
+(0, 整数)
+(), 分隔符)
+(x, 标识符)
+(=, 运算符)
+(x, 标识符)
+(+, 运算符)
+(1, 整数)
+(;, 分隔符)
+(else, 关键字)
+(x, 标识符)
+(=, 运算符)
+(0, 整数)
+(;, 分隔符)
+(}, 分隔符)
+符号表：
+(x, int, VARIABLE)
+测试组 3：while / do 关键字（sample3_loop）
+输入（samples/sample3_loop.src）：
+{
+  int i;
+  i = 0;
+  while (i < 5) i = i + 1;
+  do i = i - 1; while (i > 0);
+}
+运行结果（摘自 docs/test-output/sample3_loop.txt「实验一」章节）：
+({, 分隔符)
+(int, 关键字)
+(i, 标识符)
+(;, 分隔符)
+(i, 标识符)
+(=, 运算符)
+(0, 整数)
+(;, 分隔符)
+(while, 关键字)
+((, 分隔符)
+(i, 标识符)
+(<, 运算符)
+(5, 整数)
+(), 分隔符)
+(i, 标识符)
+(=, 运算符)
+(i, 标识符)
+(+, 运算符)
+(1, 整数)
+(;, 分隔符)
+(do, 关键字)
+(i, 标识符)
+(=, 运算符)
+(i, 标识符)
+(-, 运算符)
+(1, 整数)
+(;, 分隔符)
+(while, 关键字)
+((, 分隔符)
+(i, 标识符)
+(>, 运算符)
+(0, 整数)
+(), 分隔符)
+(;, 分隔符)
+(}, 分隔符)
+符号表：
+(i, int, VARIABLE)
+测试组 4：break 关键字（sample4_break_error）
+输入（samples/sample4_break_error.src）：
+{
+  int a;
+  a = 1;
+  break;
+}
+运行结果（摘自 docs/test-output/sample4_break_error.txt「实验一」章节）：
+({, 分隔符)
+(int, 关键字)
+(a, 标识符)
+(;, 分隔符)
+(a, 标识符)
+(=, 运算符)
+(1, 整数)
+(;, 分隔符)
+(break, 关键字)
+(;, 分隔符)
+(}, 分隔符)
+符号表：
+(a, int, VARIABLE)
+测试组 5：数组声明与下标（sample5_array）
+输入（samples/sample5_array.src）：
+{
+  int[10] arr;
+  arr[0] = 1;
+  arr[1] = arr[0] + 2;
+}
+运行结果（摘自 docs/test-output/sample5_array.txt「实验一」章节）：
+({, 分隔符)
+(int, 关键字)
+([, 分隔符)
+(10, 整数)
+(], 分隔符)
+(arr, 标识符)
+(;, 分隔符)
+(arr, 标识符)
+([, 分隔符)
+(0, 整数)
+(], 分隔符)
+(=, 运算符)
+(1, 整数)
+(;, 分隔符)
+(arr, 标识符)
+([, 分隔符)
+(1, 整数)
+(], 分隔符)
+(=, 运算符)
+(arr, 标识符)
+([, 分隔符)
+(0, 整数)
+(], 分隔符)
+(+, 运算符)
+(2, 整数)
+(;, 分隔符)
+(}, 分隔符)
+符号表：
+(arr, int[], ARRAY, len=10)
+测试组 6：实型常数（sample6_float）
+输入（samples/sample6_float.src）：
+{
+  float x;
+  x = 2.5;
+  x = x + 1.0;
+}
+运行结果（摘自 docs/test-output/sample6_float.txt「实验一」章节）：
+({, 分隔符)
+(float, 关键字)
+(x, 标识符)
+(;, 分隔符)
+(x, 标识符)
+(=, 运算符)
+(2.5, 实数)
+(;, 分隔符)
+(x, 标识符)
+(=, 运算符)
+(x, 标识符)
+(+, 运算符)
+(1.0, 实数)
+(;, 分隔符)
+(}, 分隔符)
+符号表：
+(x, float, VARIABLE)
+测试组 7：bool 与布尔常数（sample7_bool）
+输入（samples/sample7_bool.src）：
+{
+  bool flag;
+  flag = true;
+  if (flag) flag = false;
+}
+运行结果（摘自 docs/test-output/sample7_bool.txt「实验一」章节）：
+({, 分隔符)
+(bool, 关键字)
+(flag, 标识符)
+(;, 分隔符)
+(flag, 标识符)
+(=, 运算符)
+(true, 布尔常数)
+(;, 分隔符)
+(if, 关键字)
+((, 分隔符)
+(flag, 标识符)
+(), 分隔符)
+(flag, 标识符)
+(=, 运算符)
+(false, 布尔常数)
+(;, 分隔符)
+(}, 分隔符)
+符号表：
+(flag, bool, VARIABLE)
+八、实验总结
+完成了任务书要求的二元组输出、注释/空白删除、错误定位、符号表建立与顺序打印，实现类为 LexerImpl、SourceBuffer、LexicalDeclarationBinder、ScopedSymbolTable、LexicalReporter。
+采用字符缓冲区与 DFA 直接编码，与教材词法分析原理一致；双字符运算符、布尔字面量 true/false 与关键字分流与源码一致。
+测试数据见 docs/test-output 下 7 个样例导出文件之「实验一」章节；LexerImplTest 单元测试全部通过。
+词法符号表为后续 CompilerPipeline 中 LR(1) 语法分析提供 token 序列与标识符类型信息。
+小组成员 | 学号 | 分工
+ |  | 词法分析、实验报告
+ |  | 
+类 | 函数原型 | 参数含义 | 返回值 | 功能
+Lexer | LexicalAnalyzerResult analyze(String sourceCode) | sourceCode：待扫描的完整源程序文本 | LexicalAnalyzerResult | 词法分析对外接口
+LexerImpl | LexicalAnalyzerResult analyze(String sourceCode) | sourceCode：源程序；内部维护 index/line/column | tokens、errors、symbolsInOrder | 主扫描：空白/注释/单词/错误
+SourceBuffer | char charAt(int index)
+String substring(int start, int end) | index/start/end：在 char[] 上的下标 | char 或子串 | 缓冲区按索引读字符，避免重复 substring
+KeywordTable | boolean isKeyword(String lexeme) | lexeme：标识符拼写 | true 表示保留字 | 区分 if/int 与普通标识符
+ScopedSymbolTable | void registerIdentifier(String name) | name：标识符名 | void | 首次出现时按顺序加入符号表，类型暂为「待声明」
+ScopedSymbolTable | void bindDeclaration(String name, String typeName, SymbolKind kind, Integer arrayLength) | name/typeName/kind/arrayLength：声明得到的类型信息 | void | 将已登记标识符更新为 int/float/bool/int[] 等
+LexicalDeclarationBinder | void bindDeclarations(List<Token> tokens, ScopedSymbolTable symbolTable) | tokens：扫描结果；symbolTable：待填类型的符号表 | void | 匹配 type id; 与 type[num] id; 后调用 bindDeclaration
+LexicalReporter | List<String> formatTokenTuples(List<Token> tokens) | tokens：含 EOF 的 token 列表 | List<String> | 生成 (单词, 类别) 二元组行，过滤 EOF
+LexicalReporter | List<String> formatSymbolTable(List<Symbol> symbols) | symbols：symbolsInOrder() | List<String> | 生成 (名, 类型, 种类) 符号表行
+ExperimentDemo | void printReport(PipelineReport report, LR1Parser parser, String[] args) | report：含 lexicalResult；用于控制台实验一输出 | void | 打印二元组、符号表、词法错误
+字段 | 含义 | 示例
+name | 标识符名 | a
+typeName | int / float / bool / int[] / 待声明 | int
+kind | VARIABLE 或 ARRAY | VARIABLE
+arrayLength | 数组声明中的长度 | 10

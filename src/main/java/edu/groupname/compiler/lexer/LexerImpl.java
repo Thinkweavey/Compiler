@@ -159,6 +159,8 @@ public class LexerImpl implements Lexer {
             tokens.add(new Token(TokenType.EOF, EOF_LEXEME, eofPosition));
         }
 
+        LexicalDeclarationBinder.bindDeclarations(tokens, symbolTable);
+
         return new LexicalAnalyzerResult(
                 List.copyOf(tokens),
                 List.copyOf(errors),

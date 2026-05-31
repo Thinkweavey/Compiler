@@ -1,0 +1,233 @@
+Root Entry
+SummaryInformation
+DocumentSummaryInformation
+ObjectPool
+Normal.dotm
+WPS Office_12.8.2.17838_F1E327BC-269C-435d-A152-05C5408002CA
+MSCD
+ Htpp://Bbs.Mscode.Cc
+KSOProductBuildVer
+ICV
+2052-12.8.2.17838
+70840C4D5A18469097884302723A9598_13
+_1234567890
+_1234567891
+_1234567892
+_1234567893
+Ole
+CompObj
+ObjInfo
+CONTENTS
+Adobe Photoshop
+Adobe Photoshop 7.0
+!!#
+(../++)%
+)(,/10-..+.+!
+Ole
+CompObj
+ObjInfo
+CONTENTS
+Adobe Photoshop
+Adobe Photoshop 7.0
+	
+
+
+ ##%%&)++*&$('%%##
+Ole
+CompObj
+ObjInfo
+CONTENTS
+Adobe Photoshop
+Adobe Photoshop 7.0
+
+	
+
+Ole
+CompObj
+ObjInfo
+CONTENTS
+Adobe Photoshop
+Adobe Photoshop 7.0
+WordDocument
+0Table
+Data
+WpsCustomData
+
+Object 1
+
+Object 2
+
+Object 3
+
+Object 4
+
+IMG_256
+IMG_256
+
+IMG_256
+IMG_256
+
+ 10
+
+ 11
+
+ 12
+
+ 13
+
+ 14
+
+ 15
+
+ 16
+
+ 17
+ EMBED Photoshop.Image.7 \s 
+   
+ EMBED Photoshop.Image.7 \s 
+   
+ EMBED Photoshop.Image.7 \s 
+    
+ EMBED Photoshop.Image.7 \s 
+
+  102300404    
+     
+      
+     2023      
+    
+   
+ 102300403  
+   
+   
+ 102300405  
+   
+     
+ 102300406  
+   
+     
+2025
+2026
+ LR(1) 
+ 6-36
+6-37
+6-43
+6-46
+ Loc
+loc[bool]|id
+ bool 
+ boolExpr
+parser
+semantic
+symbol
+ | 
+ | 
+ | 
+ trace
+ (op, arg1, arg2, result)
+ ASSIGN
+ADD
+IF_FALSE_GOTO
+GOTO
+LABEL
+ARRAY_LOAD 
+ExperimentDemo 
+3.1 
+CompilerPipeline
+PipelineReport compile(String source)
+sourceCode
+lex/parser/semantic/IR
+LR1Parser
+ParserResult parse(List<Token>)
+tokens
+trace+quadruples
+LR(1)+
+SemanticReduceHandler
+ReduceOutcome reduce(...)
+productionIndex,rhs,ctx
+attr+actions
+SemanticAnalyzerImpl
+SemanticResult analyze(ParserResult)
+parserResult
+errors+quads
+IRGeneratorImpl
+IRProgram generate(SemanticResult)
+semanticResult
+IRProgram
+IrReporter
+List<String> formatProgram(IRProgram)
+program
+formatted lines
+ScopedSymbolTable
+void bindDeclaration(...)
+name,type,kind
+void
+ExperimentDemo
+printReport(...)
+PipelineReport
+void
+3.2 
+INCLUDEPICTURE \d "https://cdn-0.plantuml.com/plantuml/png/XLLTJzn657tthnYb3msgO9KqQQC-L0aBD4YaGhlqeTA-pDft5mjxnXtFAf2g4WWe7u42AW69f7oK4b0LFb8QGbbI_akqOozF-Gkz7g_1IulwjDvxpxdtpl7ndVk-f49MNCVucAYzrVFVPsh7KnzEL-hxky7XCpLvfFPFmxDgVN-XTlnJxNZtVFdFMdKpN1yXxuSNYPfu5pmxg1-CXeixQlmmFAmQ_e3DF2geI_n-Ql77DYkJ4dLyI6KOjy07ZtnwDnKKb0r4mJlfe0KbMd5a5sVoQ-e2UMIRWlky9Cctz27O_utCsq-0tBgThWscfApi0FdU8AITcWDbmIlCodA72_9HvxskErtPACE51Q8HlTtv-Ttspp2QYw62WI3tZ1yCGtAFI4wAN4gEdUselCsPOLpskP7bhcSx81vudcERDCeNM9jBRNQpvGQXFdc4Zr6fCiX-47gm5Brpq0DXky1a1xWScGwdLfvNX0aDVWy6cZb9orxR0yTcW2nJXn9AalYVLfwmcSo1nuLCY54aEdcArWE38BfTpq46PTGPUfAqqPacQEvMBnK-YAWuFYH07MmgcWUNCccRER0g9Zoap78qIqJ_4rgSl5wxRj5UiHqh8fO4-Frzu7eaWqpVBZEIAR2YpNWKANF9UsWH7DBMrgPB8xMvLZ9G5dq5WxB007z5tkGUO04OjAL-BZ1_o2rons-Cc9M3pNKqoifhK1yjEg2di3h0TAZGxcWm4P8MEZN20otoDPeZACtfpdq53B0mJ-3b-7-2ru3h9THl9hQ0rh_4XKjbdw0NBw7BZVzUbVvVf5x1ouAwbxJkN7J0oFwajVLBxMFo1QdlLuEJ-M1febOzkamcZaL0UBg4MoYLYZo9yM3gPpLx44nlgOLfmqW86gADY93t2-jOVnONMdDUdrBdDqYyy3v9xxq2kodv032_fPc6MclIhn6fzjTKi3aSh6qXsjFrWibvDRqMB1yrqsB9DN6JXDMn-kOuXf3bNtZUhpYonJ3qM9eIEpqwvFvSy6g3v3exlibs8gU-FHQUlCGUwisC6j-Avr3JExLtBx10J8kRYlP8kyMrQAhdpzNug3gT2wScWhqtQHZw5M78ZXRvsbecVFLIpRsjR-mOcD48z2KYBFGhYPk7rGMrjnA-hghLfuQ1cgHWvnEpmUBVn4-SgzUZNs1gf47850NG0HBkDiGp3ArEIbxqWvfR8jzLg2KgdWF8lbaxdiNAwhVPz5l2ysehQ6xYIYoW9dyCLkVhPnFXpjDcH7SEqtZDgHS7wfTXlCiCWt49oJxdfMJ3499lLQzNW-7jTCDW_LYTZU8TYVbWPgfsietoegfeKDIC-8zjQVP_E9t1j9gVHDt9nHSifR2B5Vm8FGU7p9ZSWemSyg3506QHQ8YheyIkmL9NlcXIguwhWn4q4URYvHhx9vDliXDcyTPMR_-8BH2kZ5suG4qkumk-x7mVdogkymy0" \* MERGEFORMATINET 
+1  
+3.3 
+INCLUDEPICTURE \d "https://cdn-0.plantuml.com/plantuml/png/ZLLTJnj757tthnYf3xLNIX1HQAj4QcFC6Ymv0QtDGoGajBN7i6AzkvrTDv2g4YW1smaVfY641ZT0I82c0KEJy64RaFfJeftPvOc_qBiUOpPD7kg7_TXxvyovvvuxlcLQCh5oMJNmDOheMKDHCUbJ3Amg6aPkPPkzUqeB-xHITqvhRcMUZTViuoVimuIpzJXWZYYQ8HCvYynXEQtVKxGXb95L4_iYQPoHSweLrJNhZfp5wBQI8hgfPonqL-x1ofSp4yfzZDgl-O9oob9-Lgmnz4i0eKuvDJ94z9oMZkYgJj1NudVHwz685z596fFcrslYjnsTty3NBaNEwbhwisNHQFIwsE5ByA-ET7I4szi3lmO23OK2WHlkoHCw-He9WgddI0f7z3GMX9iG-3Y_2b_ZU1IJMDPGhygQh8xTX-20zd7gDvJKHx26Q7ME5fuDQ45Q-ijvkq7d3jorBQSsJtUUXpZ8cWSYjVV9nCJagW6t1aHS2hQ7aBDPSq-NhxYR3vtgnjcVU_JH5gmYsC2oXMx49KGBK-n5YPwySMOhDw4c9OE2a6GVbty88MiO60GJFR5eCWGnX6vmlFFwihkpIu-VeiQkIIAdSCB2XWU0eP4UY2HszKT4Zi7NqleHMoruQtSVE0jRG3k1ix9cAIa9ftCft2DhQHLA88qtq8WlOzD5kxhfBApG-XnSMQ44_hAFYfobVJWxe0c2VLYavLtwnxYpEk4KyspdWo04OwGpfwZGcr0JYik03A8FUUvWp_RPNXwy2LH-oibfaZDKRBOsxkvDzlwVIiEHYDYNz5VA1u1B2tpfevMBV1GK9QbNQggP6DCiULGaH2UmaLChiEsNj3JhrBRFblQX1ax4j7J3MwwbbSn5w-uDAog0iV8RkZCDMq2p51FUbogXm9NlQMa3kknnuqmuXuk6yYn01FEyz7KXpFttcHdFyZDiuGIP5samKxfc3cXiVPojl7RsQlJ5upPe1VIKhgoq_KYmF8ASxI9GQFffUucMjtZNpXP-ToiLFnMkHMDCybL_adswnYOgO7rnrC14oMBDwi9P7OwNzsnfrbsR3bsg2XM7MXhnqjQXj9ZKZJLCP4ldLGtnjqPPT7V2NPz4bur7tjJ5f3xkZfjDc5SU396meHCBp9dHILQscZaU35kjWp7fzA9zMANBotJo0RoonJmhl-KGWl0fVq50lDO1xPy3vBUAUvg7yp5eUIOBDQ9-Mv_N2otyyxgdhhzq4F3W7G1m-t0Pss8IgCSAYtPjacz93_vcvIBYEu1wt5jDrHhF0KstC2BAqB05OK7W8mEJmaVFUVwmHO9tNX0Wxmhyu1PE96BTTr0R2dTrmJNHtmdNs_rn27MBy1XFmYKM7Oo6umbnq9ilBm8tBnRk5Bt4i2I5xmx6UyCU0dz997ibqME9F79DYYhES8Pm0h1g2GIo3yVT_7jW2DQ0PlY9WPGjsc15n0ydr2Xhh-6_Bnv5Y1VD0VxZ9UZD39sQWU6WhsRulnpF0u7zBeOzxDeCdE4WVuj3OqlxP9bMZfp9JUYikpc1FhK9jFYov5lm17-s_m80" \* MERGEFORMATINET 
+2  CompilerPipeline 
+4.1 ScopedSymbolTablescopes
+ name
+Symbol 
+definitionOrder
+bindDeclaration
+ id 
+ int/float/bool 
+4.2 SemanticContext
+symbolTable
+ScopedSymbolTable 
+decl 
+ bind
+IrBuilder
+ t1,L1 
+quadruples
+List<Quadruple>
+Symbol(name, typeName, kind, arrayLength)
+kind 
+ VARIABLE 
+ ARRAY
+S-
+ reduce 
+ SemanticReduceHandler
+ SemanticAttribute
+place/code/type
+stmt 
+while/do-while 
+ LABEL 
+expr 
+ tn
+ SemanticAnalyzerImpl 
+break 
+if-else 
+sample2_if_else
+samples/sample2_if_else.src
+{  int x;  if (x >= 0) x = x + 1;  else x = 0;}
+while/do-while
+sample3_loop
+samples/sample3_loop.src
+{  int i;  i = 0;  while (i < 5) i = i + 1;  do i = i - 1; while (i > 0);}
+sample5_array
+samples/sample5_array.src
+{  int[10] arr;  arr[0] = 1;  arr[1] = arr[0] + 2;}
+break 
+sample4_break_error.src
+samples/sample4_break_error.src
+{  Int a;  a = 1;  break;}
+ LR 
+if-else
+while/do-while
+
+HTML 
+Times New Roman
+Calibri
+MS Gothic
+Wingdings
+Courier New
+Consolas
+Êf!),.:;?]}¨·
+([{·

@@ -1,0 +1,509 @@
+
+
+
+编译系统设计实践实验报告
+
+实验二：LR(1) 语法分析程序实验
+
+学    号：  ________________
+姓    名：  ________________
+年    级：  ________________
+学    院：  ________________
+专    业：  ________________
+
+实验时间：2025—2026 学年第二学期
+
+一、实验目的与任务
+根据课程文法编制 LR(1) 分析程序，对输入符号串自下而上分析；输出 LR(1) 分析表与分析过程中的状态栈、符号栈、剩余输入与动作（对应教材图 4-36、4-38）。
+文法中 bool 在工程中记为 boolExpr。实现包：edu.groupname.compiler.parser 与 grammar。
+二、功能描述
+输出语法分析表：ACTION(状态, 终端符)=移进/s/规约，GOTO(状态, 非终端符)=状态；格式参考教材图 4-38。
+输出分析过程：每步“状态栈 | 符号栈 | 剩余输入 | 动作”（ParseReporter.formatStep）。
+分析成功时 accepted=true；无动作项时记录 SyntaxError并 accepted=false。
+分析表静态构造；对 else 的移进/规约冲突按悬空 else 优先移进。
+ExperimentDemo 输出「实验二：LR(1) 语法分析」小节。
+三、程序结构描述
+3.1 函数/方法说明
+
+3.2 函数调用关系图
+
+图1  LR(1) 语法分析模块函数调用关系图
+
+3.3 程序总体执行流程图
+
+图2  LR1Parser.parse 总体执行流程图
+
+四、LR(1) 分析表与栈结构设计
+4.1 ParsingTable
+ACTION 键 (state, terminal)，值 SHIFT(s)/REDUCE(r)/ACCEPT/ERROR。
+GOTO 键 (state, nonTerminal)，值为规约后状态号。
+exportRows() 导出为 ACTION(...)=... / GOTO(...)=... 文本行。
+4.2 分析栈与 ParseTraceStep
+
+输出格式与教材图 4-38 一致。
+五、LR(1) 算法概要
+FIRST集：computeFirstSets() 迭代求解。
+项目集：closure、goTo；buildParsingTableForGrammar 填 ACTION/GOTO。
+分析：getAction 执行 shift/reduce/accept/error。
+六、程序关键源代码
+以下摘自工程 parser、grammar 包，行号与仓库一致。
+6.1 LR1Parser.parse
+    public ParserResult parse(List<Token> tokens) {
+        List<ParseTraceStep> trace = new ArrayList<>();
+        List<CompileError> errors = new ArrayList<>();
+        List<Integer> reduced = new ArrayList<>();
+        List<String> semanticActions = new ArrayList<>();
+        List<Quadruple> quadruples = new ArrayList<>();
+        SemanticContext semanticContext = new SemanticContext();
+
+        List<String> input = tokens.stream().map(this::mapTokenToTerminal).toList();
+        int cursor = 0;
+
+        Deque<Integer> stateStack = new ArrayDeque<>();
+        Deque<String> symbolStack = new ArrayDeque<>();
+        Deque<SemanticAttribute> valueStack = new ArrayDeque<>();
+        stateStack.push(0);
+        symbolStack.push(END_MARKER);
+        valueStack.push(SemanticAttribute.empty());
+        while (true) {
+            int state = stateStack.peek();
+            String lookahead = cursor < input.size() ? input.get(cursor) : END_MARKER;
+            ActionEntry action = parsingTable.getAction(state, lookahead);
+            String actionLabel = action.display();
+            trace.add(new ParseTraceStep(
+                    formatStateStack(stateStack),
+                    formatSymbolStack(symbolStack),
+                    remainingInput(input, cursor),
+                    actionLabel
+            ));
+            if (action.type() == ActionEntry.ActionType.SHIFT) {
+                if ("{".equals(lookahead)) {
+                    semanticContext.enterScope();
+                    semanticActions.add("ENTER_SCOPE");
+                }
+                if ("}".equals(lookahead)) {
+                    semanticContext.exitScope();
+                    semanticActions.add("EXIT_SCOPE");
+                }
+                if ("while".equals(lookahead) || "do".equals(lookahead)) {
+                    semanticContext.ir().pushBreakTarget(semanticContext.ir().freshLabel());
+                }
+                symbolStack.push(lookahead);
+                if (END_MARKER.equals(lookahead)) {
+                    valueStack.push(SemanticAttribute.empty());
+                } else {
+                    Token shifted = tokens.get(cursor);
+                    valueStack.push(SemanticAttribute.fromShift(shifted, lookahead));
+                }
+                stateStack.push(action.target());
+                cursor++;
+                continue;
+            }
+            if (action.type() == ActionEntry.ActionType.REDUCE) {
+                int productionIndex = action.target();
+                if (productionIndex < 0 || productionIndex >= grammar.productions().size()) {
+                    SourcePosition pos = cursor < tokens.size() ? tokens.get(cursor).position() : SourcePosition.UNKNOWN;
+                    errors.add(new SyntaxError("规约产生式索引非法: r" + productionIndex, pos));
+                    return new ParserResult(false, trace, errors, reduced, semanticActions, quadruples);
+                }
+                Production p = grammar.productions().get(productionIndex);
+                List<SemanticAttribute> rhsAttributes = new ArrayList<>();
+                for (int i = 0; i < p.right().size(); i++) {
+                    if (!symbolStack.isEmpty()) {
+                        symbolStack.pop();
+                    }
+                    if (!valueStack.isEmpty()) {
+                        rhsAttributes.add(valueStack.pop());
+                    }
+                    if (stateStack.size() > 1) {
+                        stateStack.pop();
+                    }
+                }
+                Collections.reverse(rhsAttributes);
+                SemanticReduceHandler.ReduceOutcome outcome =
+                        SemanticReduceHandler.reduce(productionIndex, rhsAttributes, semanticContext);
+                semanticActions.addAll(outcome.actions());
+                if (productionIndex == 0) {
+                    quadruples = new ArrayList<>(outcome.attribute().code());
+                }
+                int gotoBase = stateStack.peek();
+                GotoEntry gotoEntry = parsingTable.getGoto(gotoBase, p.left());
+                if (gotoEntry == null) {
+                    SourcePosition pos = cursor < tokens.size() ? tokens.get(cursor).position() : SourcePosition.UNKNOWN;
+                    errors.add(new SyntaxError(
+                            "缺少 GOTO 项: (" + gotoBase + ", " + p.left() + ")",
+                            pos
+                    ));
+                    return new ParserResult(false, trace, errors, reduced, semanticActions, quadruples);
+                }
+                symbolStack.push(p.left());
+                valueStack.push(outcome.attribute());
+                stateStack.push(gotoEntry.nextState());
+                reduced.add(productionIndex);
+                continue;
+            }
+            if (action.type() == ActionEntry.ActionType.ACCEPT) {
+                return new ParserResult(true, trace, List.of(), reduced, semanticActions, quadruples);
+            }
+            SourcePosition pos = cursor < tokens.size() ? tokens.get(cursor).position() : SourcePosition.UNKNOWN;
+            errors.add(new SyntaxError("语法错误，当前符号: " + lookahead, pos));
+            return new ParserResult(false, trace, errors, reduced, semanticActions, quadruples);
+        }
+6.2 buildParsingTableForGrammar
+    private static ParsingTable buildParsingTableForGrammar(Grammar grammar) {
+        LR1Parser builder = new LR1Parser(grammar);
+        ParsingTable table = new ParsingTable();
+        Map<String, Set<String>> first = builder.computeFirstSets();
+
+        Set<LR1Item> startState = builder.closure(Set.of(new LR1Item(-1, 0, END_MARKER)), first);
+        List<Set<LR1Item>> states = new ArrayList<>();
+        Map<Set<LR1Item>, Integer> stateIds = new LinkedHashMap<>();
+        Map<String, Integer> transitions = new HashMap<>();
+        states.add(startState);
+        stateIds.put(startState, 0);
+
+        for (int i = 0; i < states.size(); i++) {
+            Set<LR1Item> state = states.get(i);
+            for (String symbol : grammar.symbols()) {
+                Set<LR1Item> next = builder.goTo(state, symbol, first);
+                if (next.isEmpty()) {
+                    continue;
+                }
+                Integer id = stateIds.get(next);
+                if (id == null) {
+                    id = states.size();
+                    states.add(next);
+                    stateIds.put(next, id);
+                }
+                transitions.put(i + "::" + symbol, id);
+            }
+        }
+
+        for (int i = 0; i < states.size(); i++) {
+            Set<LR1Item> state = states.get(i);
+            for (LR1Item item : state) {
+                if (item.productionIndex() == -1 && item.dotPosition() == 1 && END_MARKER.equals(item.lookahead())) {
+                    table.putAction(i, END_MARKER, ActionEntry.accept());
+                    continue;
+                }
+                Production production = item.productionIndex() == -1
+                        ? new Production(AUGMENTED_START, List.of(grammar.startSymbol()))
+                        : grammar.productions().get(item.productionIndex());
+                if (item.dotPosition() < production.right().size()) {
+                    String nextSymbol = production.right().get(item.dotPosition());
+                    Integer target = transitions.get(i + "::" + nextSymbol);
+                    if (target == null) {
+                        continue;
+                    }
+                    if (grammar.terminals().contains(nextSymbol)) {
+                        table.putAction(i, nextSymbol, ActionEntry.shift(target));
+                    } else if (grammar.nonTerminals().contains(nextSymbol)) {
+                        table.putGoto(i, nextSymbol, new GotoEntry(target));
+                    }
+                } else if (item.productionIndex() >= 0) {
+                    table.putAction(i, item.lookahead(), ActionEntry.reduce(item.productionIndex()));
+                }
+            }
+        }
+        return table;
+6.3 closure / goTo
+    private Set<LR1Item> closure(Set<LR1Item> kernel, Map<String, Set<String>> first) {
+        Set<LR1Item> closure = new LinkedHashSet<>(kernel);
+        boolean changed = true;
+        while (changed) {
+            changed = false;
+            Set<LR1Item> snapshot = new LinkedHashSet<>(closure);
+            for (LR1Item item : snapshot) {
+                Production p = productionOf(item.productionIndex());
+                if (item.dotPosition() >= p.right().size()) {
+                    continue;
+                }
+                String next = p.right().get(item.dotPosition());
+                if (!grammar.nonTerminals().contains(next)) {
+                    continue;
+                }
+                List<String> beta = new ArrayList<>();
+                for (int i = item.dotPosition() + 1; i < p.right().size(); i++) {
+                    beta.add(p.right().get(i));
+                }
+                beta.add(item.lookahead());
+                Set<String> lookaheads = firstOfSequence(beta, first);
+                for (int pi = 0; pi < grammar.productions().size(); pi++) {
+                    Production candidate = grammar.productions().get(pi);
+                    if (!candidate.left().equals(next)) {
+                        continue;
+                    }
+                    for (String la : lookaheads) {
+                        if (EPSILON.equals(la)) {
+                            continue;
+                        }
+                        LR1Item newItem = new LR1Item(pi, 0, la);
+                        if (closure.add(newItem)) {
+                            changed = true;
+                        }
+                    }
+                }
+            }
+        }
+        return closure;
+    }
+
+    private Set<LR1Item> goTo(Set<LR1Item> state, String symbol, Map<String, Set<String>> first) {
+        Set<LR1Item> moved = new LinkedHashSet<>();
+        for (LR1Item item : state) {
+            Production p = productionOf(item.productionIndex());
+            if (item.dotPosition() < p.right().size() && symbol.equals(p.right().get(item.dotPosition()))) {
+                moved.add(new LR1Item(item.productionIndex(), item.dotPosition() + 1, item.lookahead()));
+            }
+        }
+        if (moved.isEmpty()) {
+            return Set.of();
+        }
+        return closure(moved, first);
+    }
+6.4 ParsingTable
+    public void putAction(int state, String terminal, ActionEntry entry) {
+        String mapKey = key(state, terminal);
+        ActionEntry existing = action.get(mapKey);
+        if (existing != null && !existing.equals(entry)) {
+            ActionEntry resolved = resolveShiftReduceConflict(terminal, existing, entry);
+            if (resolved != null) {
+                action.put(mapKey, resolved);
+                return;
+            }
+            conflicts.put(mapKey, existing.display() + " -> " + entry.display());
+        }
+        action.put(mapKey, entry);
+    }
+
+    /**
+     * 悬空 else：对 lookahead 为 else 的 shift/reduce 冲突，优先移进（绑定最近 if）。
+     */
+    private static ActionEntry resolveShiftReduceConflict(String terminal, ActionEntry existing, ActionEntry incoming) {
+        if (!"else".equals(terminal)) {
+            return null;
+        }
+        boolean existingShift = existing.type() == ActionEntry.ActionType.SHIFT;
+        boolean incomingShift = incoming.type() == ActionEntry.ActionType.SHIFT;
+        if (existingShift && !incomingShift) {
+            return existing;
+        }
+        if (incomingShift && !existingShift) {
+            return incoming;
+        }
+        return null;
+    }
+6.5 Grammar.defaultLabGrammar
+    public static Grammar defaultLabGrammar() {
+        Set<String> terminals = Set.of(
+                "{", "}", "(", ")", "[", "]", ";",
+                "id", "num", "real", "true", "false",
+                "if", "else", "while", "do", "break",
+                "int", "float", "bool",
+                "=", "||", "&&", "==", "!=", "<", "<=", ">=", ">", "+", "-", "*", "/", "!",
+                "$"
+        );
+        Set<String> nonTerminals = Set.of(
+                "program", "block", "decls", "decl", "type", "basic", "stmts", "stmt",
+                "loc", "boolExpr", "join", "equality", "rel", "expr", "term", "unary", "factor"
+        );
+        List<Production> productions = List.of(
+                Production.of("program", "block"),
+                Production.of("block", "{", "decls", "stmts", "}"),
+                Production.of("decls", "decls", "decl"),
+                Production.of("decls"),
+                Production.of("decl", "type", "id", ";"),
+                Production.of("type", "type", "[", "num", "]"),
+                Production.of("type", "basic"),
+                Production.of("basic", "int"),
+                Production.of("basic", "float"),
+                Production.of("basic", "bool"),
+                Production.of("stmts", "stmts", "stmt"),
+                Production.of("stmts"),
+                Production.of("stmt", "loc", "=", "boolExpr", ";"),
+                Production.of("stmt", "if", "(", "boolExpr", ")", "stmt"),
+                Production.of("stmt", "if", "(", "boolExpr", ")", "stmt", "else", "stmt"),
+                Production.of("stmt", "while", "(", "boolExpr", ")", "stmt"),
+                Production.of("stmt", "do", "stmt", "while", "(", "boolExpr", ")", ";"),
+                Production.of("stmt", "break", ";"),
+                Production.of("stmt", "block"),
+                Production.of("loc", "loc", "[", "boolExpr", "]"),
+                Production.of("loc", "id"),
+                Production.of("boolExpr", "boolExpr", "||", "join"),
+                Production.of("boolExpr", "join"),
+                Production.of("join", "join", "&&", "equality"),
+                Production.of("join", "equality"),
+                Production.of("equality", "equality", "==", "rel"),
+                Production.of("equality", "equality", "!=", "rel"),
+                Production.of("equality", "rel"),
+                Production.of("rel", "expr", "<", "expr"),
+                Production.of("rel", "expr", "<=", "expr"),
+                Production.of("rel", "expr", ">=", "expr"),
+                Production.of("rel", "expr", ">", "expr"),
+                Production.of("rel", "expr"),
+                Production.of("expr", "expr", "+", "term"),
+                Production.of("expr", "expr", "-", "term"),
+                Production.of("expr", "term"),
+                Production.of("term", "term", "*", "unary"),
+                Production.of("term", "term", "/", "unary"),
+                Production.of("term", "unary"),
+                Production.of("unary", "!", "unary"),
+                Production.of("unary", "-", "unary"),
+                Production.of("unary", "factor"),
+                Production.of("factor", "(", "boolExpr", ")"),
+                Production.of("factor", "loc"),
+                Production.of("factor", "num"),
+                Production.of("factor", "real"),
+                Production.of("factor", "true"),
+                Production.of("factor", "false")
+        );
+6.6 ParseReporter
+    public static List<String> formatTrace(List<ParseTraceStep> trace) {
+        return trace.stream()
+                .map(ParseReporter::formatStep)
+                .collect(Collectors.toList());
+    }
+
+    public static String formatStep(ParseTraceStep step) {
+        return String.format(
+                "状态栈=%s | 符号栈=%s | 剩余输入=%s | 动作=%s",
+                step.stateStack(),
+                step.symbolStack(),
+                step.input(),
+                step.action()
+        );
+七、测试数据与运行结果（≥3 组）
+来自 docs/test-output/*.txt「实验二」章节（scripts/export-test-outputs.ps1 导出），与控制台一致。
+测试组 1：基础声明（sample1_basic）
+输入（samples/sample1_basic.src）：
+{ int a; a = 1; }
+语法分析表（节选 ACTION）：
+（ACTION 2579 项，GOTO 612 项；格式：KIND(状态, 符号)=动作）
+ACTION(0, {) = s3
+ACTION(100, break) = s18
+ACTION(100, do) = s21
+ACTION(100, id) = s20
+ACTION(100, if) = s19
+ACTION(100, while) = s17
+ACTION(100, {) = s23
+ACTION(100, }) = s159
+ACTION(101, !) = s52
+ACTION(101, () = s50
+ACTION(101, -) = s57
+ACTION(101, false) = s55
+分析过程（前段 … 末段）：
+状态栈=[0] | 符号栈=[$] | 剩余输入={ int id ; id = num ; } $ | 动作=s3
+状态栈=[0, 3] | 符号栈=[$, {] | 剩余输入=int id ; id = num ; } $ | 动作=r3
+状态栈=[0, 3, 4] | 符号栈=[$, {, decls] | 剩余输入=int id ; id = num ; } $ | 动作=s10
+状态栈=[0, 3, 4, 10] | 符号栈=[$, {, decls, int] | 剩余输入=id ; id = num ; } $ | 动作=r7
+状态栈=[0, 3, 4, 5] | 符号栈=[$, {, decls, basic] | 剩余输入=id ; id = num ; } $ | 动作=r6
+状态栈=[0, 3, 4, 6] | 符号栈=[$, {, decls, type] | 剩余输入=id ; id = num ; } $ | 动作=s13
+...
+状态栈=[0, 3, 4, 7, 22] | 符号栈=[$, {, decls, stmts, }] | 剩余输入=$ | 动作=r1
+状态栈=[0, 1] | 符号栈=[$, block] | 剩余输入=$ | 动作=r0
+状态栈=[0, 2] | 符号栈=[$, program] | 剩余输入=$ | 动作=acc
+分析结果：accepted = true
+测试组 2：if-else（sample2_if_else）
+输入（samples/sample2_if_else.src）：
+{
+  int x;
+  if (x >= 0) x = x + 1;
+  else x = 0;
+}
+语法分析表（节选 ACTION）：
+（ACTION 2579 项，GOTO 612 项；格式：KIND(状态, 符号)=动作）
+ACTION(0, {) = s3
+ACTION(100, [) = r5
+ACTION(100, id) = r5
+ACTION(101, !) = s70
+ACTION(101, () = s72
+ACTION(101, -) = s73
+ACTION(101, false) = s67
+ACTION(101, id) = s68
+ACTION(101, num) = s71
+ACTION(101, real) = s66
+ACTION(101, true) = s69
+ACTION(102, !) = s53
+分析过程（前段 … 末段）：
+状态栈=[0] | 符号栈=[$] | 剩余输入={ int id ; if ( id >= num ) id = id + num ; else id = num ; } $ | 动作=s3
+状态栈=[0, 3] | 符号栈=[$, {] | 剩余输入=int id ; if ( id >= num ) id = id + num ; else id = num ; } $ | 动作=r3
+状态栈=[0, 3, 4] | 符号栈=[$, {, decls] | 剩余输入=int id ; if ( id >= num ) id = id + num ; else id = num ; } $ | 动作=s10
+状态栈=[0, 3, 4, 10] | 符号栈=[$, {, decls, int] | 剩余输入=id ; if ( id >= num ) id = id + num ; else id = num ; } $ | 动作=r7
+状态栈=[0, 3, 4, 8] | 符号栈=[$, {, decls, basic] | 剩余输入=id ; if ( id >= num ) id = id + num ; else id = num ; } $ | 动作=r6
+状态栈=[0, 3, 4, 7] | 符号栈=[$, {, decls, type] | 剩余输入=id ; if ( id >= num ) id = id + num ; else id = num ; } $ | 动作=s22
+...
+状态栈=[0, 3, 4, 6, 16] | 符号栈=[$, {, decls, stmts, }] | 剩余输入=$ | 动作=r1
+状态栈=[0, 2] | 符号栈=[$, block] | 剩余输入=$ | 动作=r0
+状态栈=[0, 1] | 符号栈=[$, program] | 剩余输入=$ | 动作=acc
+分析结果：accepted = true
+测试组 3：while / do-while（sample3_loop）
+输入（samples/sample3_loop.src）：
+{
+  int i;
+  i = 0;
+  while (i < 5) i = i + 1;
+  do i = i - 1; while (i > 0);
+}
+语法分析表（节选 ACTION）：
+（ACTION 2579 项，GOTO 612 项；格式：KIND(状态, 符号)=动作）
+ACTION(0, {) = s3
+ACTION(100, [) = r5
+ACTION(100, id) = r5
+ACTION(101, break) = r12
+ACTION(101, do) = r12
+ACTION(101, id) = r12
+ACTION(101, if) = r12
+ACTION(101, while) = r12
+ACTION(101, {) = r12
+ACTION(101, }) = r12
+ACTION(102, !) = s53
+ACTION(102, () = s55
+分析过程（前段 … 末段）：
+状态栈=[0] | 符号栈=[$] | 剩余输入={ int id ; id = num ; while ( id < num ) id = id + num ; do id = id - num ; while ( id > num ) ; } $ | 动作=s3
+状态栈=[0, 3] | 符号栈=[$, {] | 剩余输入=int id ; id = num ; while ( id < num ) id = id + num ; do id = id - num ; while ( id > num ) ; } $ | 动作=r3
+状态栈=[0, 3, 4] | 符号栈=[$, {, decls] | 剩余输入=int id ; id = num ; while ( id < num ) id = id + num ; do id = id - num ; while ( id > num ) ; } $ | 动作=s9
+状态栈=[0, 3, 4, 9] | 符号栈=[$, {, decls, int] | 剩余输入=id ; id = num ; while ( id < num ) id = id + num ; do id = id - num ; while ( id > num ) ; } $ | 动作=r7
+状态栈=[0, 3, 4, 7] | 符号栈=[$, {, decls, basic] | 剩余输入=id ; id = num ; while ( id < num ) id = id + num ; do id = id - num ; while ( id > num ) ; } $ | 动作=r6
+状态栈=[0, 3, 4, 6] | 符号栈=[$, {, decls, type] | 剩余输入=id ; id = num ; while ( id < num ) id = id + num ; do id = id - num ; while ( id > num ) ; } $ | 动作=s22
+...
+状态栈=[0, 3, 4, 5, 21] | 符号栈=[$, {, decls, stmts, }] | 剩余输入=$ | 动作=r1
+状态栈=[0, 2] | 符号栈=[$, block] | 剩余输入=$ | 动作=r0
+状态栈=[0, 1] | 符号栈=[$, program] | 剩余输入=$ | 动作=acc
+分析结果：accepted = true
+测试组 4：语法错误
+输入：{ int a; } }
+分析过程（末几步）：
+状态栈=[0, 3, 4, 6, 22, 38] | 符号栈=[$, {, decls, type, id, ;] | 剩余输入=} } $ | 动作=r4
+状态栈=[0, 3, 4, 8] | 符号栈=[$, {, decls, decl] | 剩余输入=} } $ | 动作=r2
+状态栈=[0, 3, 4] | 符号栈=[$, {, decls] | 剩余输入=} } $ | 动作=r11
+状态栈=[0, 3, 4, 5] | 符号栈=[$, {, decls, stmts] | 剩余输入=} } $ | 动作=s21
+状态栈=[0, 3, 4, 5, 21] | 符号栈=[$, {, decls, stmts, }] | 剩余输入=} $ | 动作=err
+分析结果：
+accepted = false
+语法错误: 语法错误，当前符号: } @ SourcePosition[line=1, column=12]
+验证：LR1ParserTest.rejectsSyntaxErrorInput。
+八、实验总结
+完成了任务书要求的 LR(1) 分析表输出与分析栈跟踪输出。
+分析表静态构造，输出格式与教材图 4-36、4-38 对应。
+测试组 1–3 来自 test-output 导出；组 4 验证多余 } 拒绝分析。
+为实验三语法制导翻译与中间代码生成提供基础。
+教材：编译原理（第 2 版），Alfred V. Aho 等著，赵建华等译，机械工业出版社
+小组成员 | 学号 | 分工
+ |  | LR(1) 语法分析、实验报
+ |  | 
+类 | 函数原型 | 参数含义 | 返回值 | 功能
+Parser | ParserResult parse(List<Token> tokens) | tokens：词法 Token 序列 | ParserResult | 语法分析接口
+LR1Parser | ParserResult parse(List<Token> tokens) | stateStack、symbolStack、cursor | accepted、trace、errors | LR(1) 驱动分析
+LR1Parser | static ParsingTable buildParsingTableForGrammar(Grammar g) | 课程文法 | ParsingTable | 构造 ACTION/GOTO
+LR1Parser | Set<LR1Item> closure(...) | FIRST集、项目核 | 闭包项目集 | LR(1) 闭包
+LR1Parser | Set<LR1Item> goTo(...) | 状态、文法符号 | GOTO 项目集 | 状态转移
+ParsingTable | ActionEntry getAction(int state, String terminal) | 状态、终结符 | ActionEntry | 查移进/规约/接受
+ParsingTable | GotoEntry getGoto(int state, String nonTerminal) | 状态、非终结符 | GotoEntry | 规约后 GOTO
+ParseReporter | List<String> formatTrace(List<ParseTraceStep>) | trace 列表 | List<String> | 分析栈输出
+Grammar | static Grammar defaultLabGrammar() | 无 | Grammar | 实验文法
+ExperimentDemo | void printReport(...) | parserResult | void | 打印分析表与 trace
+结构 | 含义 | 示例
+stateStack | 状态号栈 | [0, 3, 4, 5]
+symbolStack | 文法符号栈 | [$, {, decls, stmts]
+剩余输入 | 未读终结符 | id = num ; } $
+动作 | ACTION 显示 | s22 / r4 / err

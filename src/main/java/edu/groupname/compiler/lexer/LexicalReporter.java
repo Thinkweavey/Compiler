@@ -25,7 +25,14 @@ public final class LexicalReporter {
 
     public static List<String> formatSymbolTable(List<Symbol> symbols) {
         return symbols.stream()
-                .map(symbol -> "(" + symbol.name() + ", " + symbol.typeName() + ", " + symbol.kind() + ")")
+                .map(LexicalReporter::formatSymbolEntry)
                 .collect(Collectors.toList());
+    }
+
+    private static String formatSymbolEntry(Symbol symbol) {
+        if (symbol.kind() == edu.groupname.compiler.symbol.SymbolKind.ARRAY && symbol.arrayLength() != null) {
+            return "(" + symbol.name() + ", " + symbol.typeName() + ", " + symbol.kind() + ", len=" + symbol.arrayLength() + ")";
+        }
+        return "(" + symbol.name() + ", " + symbol.typeName() + ", " + symbol.kind() + ")";
     }
 }
