@@ -1,0 +1,5 @@
+{
+  bool flag;
+  flag = true;
+  if (flag) flag = false;
+}

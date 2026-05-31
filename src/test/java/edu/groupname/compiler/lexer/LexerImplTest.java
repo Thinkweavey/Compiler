@@ -97,6 +97,25 @@ class LexerImplTest {
     }
 
     @Test
+    void analyzeBindsDeclarationTypesInSymbolTable() {
+        LexicalAnalyzerResult result = lexer.analyze("{ int a; float b; bool c; int[10] arr; }");
+
+        assertFalse(result.hasErrors());
+        assertEquals("int", typeOf(result, "a"));
+        assertEquals("float", typeOf(result, "b"));
+        assertEquals("bool", typeOf(result, "c"));
+        assertEquals("int[]", typeOf(result, "arr"));
+    }
+
+    private static String typeOf(LexicalAnalyzerResult result, String name) {
+        return result.symbols().stream()
+                .filter(symbol -> symbol.name().equals(name))
+                .findFirst()
+                .orElseThrow()
+                .typeName();
+    }
+
+    @Test
     void analyzeFormatsTokenCategoryForExperimentOutput() {
         LexicalAnalyzerResult result = lexer.analyze("int a;");
         Token intToken = result.tokens().get(0);

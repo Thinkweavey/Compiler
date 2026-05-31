@@ -58,6 +58,12 @@ class LR1ParserTest {
     }
 
     @Test
+    void parsingTableIsSharedAcrossParserInstances() {
+        LR1Parser another = new LR1Parser();
+        assertTrue(parser.parsingTable() == another.parsingTable());
+    }
+
+    @Test
     void resolvesDanglingElseByShift() {
         String source = "{ if (a) if (b) a = 1; else a = 2; }";
         var result = parser.parse(lexer.analyze(source).tokens());

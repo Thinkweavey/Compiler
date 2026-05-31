@@ -6,6 +6,8 @@ import edu.groupname.compiler.common.position.SourcePosition;
 import edu.groupname.compiler.common.token.Token;
 import edu.groupname.compiler.grammar.Grammar;
 import edu.groupname.compiler.grammar.Production;
+import edu.groupname.compiler.ir.IrBuilder;
+import edu.groupname.compiler.ir.Quadruple;
 import edu.groupname.compiler.parser.lr1.ActionEntry;
 import edu.groupname.compiler.parser.lr1.GotoEntry;
 import edu.groupname.compiler.parser.lr1.ParsingTable;
@@ -27,22 +29,37 @@ public class LR1Parser implements Parser {
     private static final String END_MARKER = "$";
     private static final String AUGMENTED_START = "program'";
 
-    private final Grammar grammar = Grammar.defaultLabGrammar();
-    private final ParsingTable parsingTable = buildParsingTable();
+    private final Grammar grammar;
+    /** 课程文法 LR(1) 分析表只构建一次，多个 {@link LR1Parser} 实例共享。 */
+    private static final ParsingTable PARSING_TABLE = buildParsingTableForGrammar(Grammar.defaultLabGrammar());
+    private final ParsingTable parsingTable = PARSING_TABLE;
+
+    public LR1Parser() {
+        this(Grammar.defaultLabGrammar());
+    }
+
+    private LR1Parser(Grammar grammar) {
+        this.grammar = grammar;
+    }
 
     @Override
     public ParserResult parse(List<Token> tokens) {
         List<ParseTraceStep> trace = new ArrayList<>();
         List<CompileError> errors = new ArrayList<>();
         List<Integer> reduced = new ArrayList<>();
+        List<String> semanticActions = new ArrayList<>();
+        List<Quadruple> quadruples = new ArrayList<>();
+        SemanticContext semanticContext = new SemanticContext();
 
         List<String> input = tokens.stream().map(this::mapTokenToTerminal).toList();
         int cursor = 0;
 
         Deque<Integer> stateStack = new ArrayDeque<>();
         Deque<String> symbolStack = new ArrayDeque<>();
+        Deque<SemanticAttribute> valueStack = new ArrayDeque<>();
         stateStack.push(0);
         symbolStack.push(END_MARKER);
+        valueStack.push(SemanticAttribute.empty());
         while (true) {
             int state = stateStack.peek();
             String lookahead = cursor < input.size() ? input.get(cursor) : END_MARKER;
@@ -55,7 +72,24 @@ public class LR1Parser implements Parser {
                     actionLabel
             ));
             if (action.type() == ActionEntry.ActionType.SHIFT) {
+                if ("{".equals(lookahead)) {
+                    semanticContext.enterScope();
+                    semanticActions.add("ENTER_SCOPE");
+                }
+                if ("}".equals(lookahead)) {
+                    semanticContext.exitScope();
+                    semanticActions.add("EXIT_SCOPE");
+                }
+                if ("while".equals(lookahead) || "do".equals(lookahead)) {
+                    semanticContext.ir().pushBreakTarget(semanticContext.ir().freshLabel());
+                }
                 symbolStack.push(lookahead);
+                if (END_MARKER.equals(lookahead)) {
+                    valueStack.push(SemanticAttribute.empty());
+                } else {
+                    Token shifted = tokens.get(cursor);
+                    valueStack.push(SemanticAttribute.fromShift(shifted, lookahead));
+                }
                 stateStack.push(action.target());
                 cursor++;
                 continue;
@@ -65,16 +99,27 @@ public class LR1Parser implements Parser {
                 if (productionIndex < 0 || productionIndex >= grammar.productions().size()) {
                     SourcePosition pos = cursor < tokens.size() ? tokens.get(cursor).position() : SourcePosition.UNKNOWN;
                     errors.add(new SyntaxError("规约产生式索引非法: r" + productionIndex, pos));
-                    return new ParserResult(false, trace, errors, reduced);
+                    return new ParserResult(false, trace, errors, reduced, semanticActions, quadruples);
                 }
                 Production p = grammar.productions().get(productionIndex);
+                List<SemanticAttribute> rhsAttributes = new ArrayList<>();
                 for (int i = 0; i < p.right().size(); i++) {
                     if (!symbolStack.isEmpty()) {
                         symbolStack.pop();
                     }
+                    if (!valueStack.isEmpty()) {
+                        rhsAttributes.add(valueStack.pop());
+                    }
                     if (stateStack.size() > 1) {
                         stateStack.pop();
                     }
+                }
+                Collections.reverse(rhsAttributes);
+                SemanticReduceHandler.ReduceOutcome outcome =
+                        SemanticReduceHandler.reduce(productionIndex, rhsAttributes, semanticContext);
+                semanticActions.addAll(outcome.actions());
+                if (productionIndex == 0) {
+                    quadruples = new ArrayList<>(outcome.attribute().code());
                 }
                 int gotoBase = stateStack.peek();
                 GotoEntry gotoEntry = parsingTable.getGoto(gotoBase, p.left());
@@ -84,19 +129,20 @@ public class LR1Parser implements Parser {
                             "缺少 GOTO 项: (" + gotoBase + ", " + p.left() + ")",
                             pos
                     ));
-                    return new ParserResult(false, trace, errors, reduced);
+                    return new ParserResult(false, trace, errors, reduced, semanticActions, quadruples);
                 }
                 symbolStack.push(p.left());
+                valueStack.push(outcome.attribute());
                 stateStack.push(gotoEntry.nextState());
                 reduced.add(productionIndex);
                 continue;
             }
             if (action.type() == ActionEntry.ActionType.ACCEPT) {
-                return new ParserResult(true, trace, List.of(), reduced);
+                return new ParserResult(true, trace, List.of(), reduced, semanticActions, quadruples);
             }
             SourcePosition pos = cursor < tokens.size() ? tokens.get(cursor).position() : SourcePosition.UNKNOWN;
             errors.add(new SyntaxError("语法错误，当前符号: " + lookahead, pos));
-            return new ParserResult(false, trace, errors, reduced);
+            return new ParserResult(false, trace, errors, reduced, semanticActions, quadruples);
         }
     }
 
@@ -147,11 +193,12 @@ public class LR1Parser implements Parser {
         return parsingTable.exportRows();
     }
 
-    private ParsingTable buildParsingTable() {
+    private static ParsingTable buildParsingTableForGrammar(Grammar grammar) {
+        LR1Parser builder = new LR1Parser(grammar);
         ParsingTable table = new ParsingTable();
-        Map<String, Set<String>> first = computeFirstSets();
+        Map<String, Set<String>> first = builder.computeFirstSets();
 
-        Set<LR1Item> startState = closure(Set.of(new LR1Item(-1, 0, END_MARKER)), first);
+        Set<LR1Item> startState = builder.closure(Set.of(new LR1Item(-1, 0, END_MARKER)), first);
         List<Set<LR1Item>> states = new ArrayList<>();
         Map<Set<LR1Item>, Integer> stateIds = new LinkedHashMap<>();
         Map<String, Integer> transitions = new HashMap<>();
@@ -161,7 +208,7 @@ public class LR1Parser implements Parser {
         for (int i = 0; i < states.size(); i++) {
             Set<LR1Item> state = states.get(i);
             for (String symbol : grammar.symbols()) {
-                Set<LR1Item> next = goTo(state, symbol, first);
+                Set<LR1Item> next = builder.goTo(state, symbol, first);
                 if (next.isEmpty()) {
                     continue;
                 }

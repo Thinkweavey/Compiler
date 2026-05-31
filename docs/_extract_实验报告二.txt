@@ -1,0 +1,321 @@
+Root Entry
+SummaryInformation
+DocumentSummaryInformation
+ObjectPool
+Normal.dotm
+Cc
+WPS Office_12.8.2.17838_F1E327BC-269C-435d-A152-05C5408002CA
+MSCD
+ Htpp://Bbs.Mscode.Cc
+KSOProductBuildVer
+ICV
+2052-12.8.2.17838
+70840C4D5A18469097884302723A9598_13
+_1234567890
+_1234567891
+_1234567892
+_1234567893
+Ole
+CompObj
+ObjInfo
+CONTENTS
+Adobe Photoshop
+Adobe Photoshop 7.0
+M*
+!!#
+(../++)%
+)(,/10-..+.+!
+Ole
+CompObj
+ObjInfo
+CONTENTS
+Adobe Photoshop
+Adobe Photoshop 7.0
+M*
+ ##%%&)++*&$('%%##
+Ole
+CompObj
+ObjInfo
+CONTENTS
+Adobe Photoshop
+Adobe Photoshop 7.0
+M*
+Ole
+CompObj
+ObjInfo
+CONTENTS
+Adobe Photoshop
+Adobe Photoshop 7.0
+M*
+WordDocument
+0Table
+Data
+WpsCustomData
+Dd
+
+(8
+Object 1
+
+Dd
+
+(8
+Object 2
+
+Dd
+
+(8
+Object 3
+
+Dd
+
+(8
+Object 4
+
+Dd
+
+(8
+ 7
+
+@
+
+¬s
+è
+Ä1
+Dd
+
+(8
+ 8
+
+C7
+z
+
+Hç
+d
+
+Dd
+
+(8
+ 11
+
+nÛ
+;À
+Dd
+
+(8
+ 12
+
+Dd
+
+(8
+ 13
+
+Dd
+
+(8
+ 14
+
+Dd
+
+(8
+ 15
+
+Dd
+
+(8
+ 16
+
+§R
+K
+«
+«
+Dd
+
+(8
+ 17
+
+Dd
+
+(8
+ 18
+
+Å_
+¤
+ EMBED Photoshop.Image.7 \s 
+   
+ EMBED Photoshop.Image.7 \s 
+   
+ EMBED Photoshop.Image.7 \s 
+    
+ EMBED Photoshop.Image.7 \s 
+LR(1) 
+  102300404    
+     
+      
+     2023      
+ 
+    
+   
+ 102300403  
+   
+   
+ 102300405  
+   
+     
+ 102300406  
+   
+     
+2025
+2026
+ LR(1) 
+ LR(1) 
+ 4-36
+4-38
+ bool 
+ boolExpr
+edu.groupname.compiler.parser 
+ grammar
+ACTION(
+, 
+)=
+/s/
+GOTO(
+, 
+)=
+ 4-38
+ | 
+ | 
+ | 
+ParseReporter.formatStep
+ accepted=true
+ SyntaxError
+ accepted=false
+ else 
+ else 
+ExperimentDemo 
+LR(1) 
+3.1 
+Parser
+ParserResult parse(List<Token> tokens)
+tokens
+ Token 
+ParserResult
+LR1Parser
+ParserResult parse(List<Token> tokens)
+stateStack
+symbolStack
+cursor
+accepted
+trace
+errors
+LR(1) 
+LR1Parser
+static ParsingTable buildParsingTableForGrammar(Grammar g)
+ParsingTable
+ ACTION/GOTO
+LR1Parser
+Set<LR1Item> closure(...)
+FIRST
+LR(1) 
+LR1Parser
+Set<LR1Item> goTo(...)
+GOTO 
+ParsingTable
+ActionEntry getAction(int state, String terminal)
+ActionEntry
+ParsingTable
+GotoEntry getGoto(int state, String nonTerminal)
+GotoEntry
+ GOTO
+ParseReporter
+List<String> formatTrace(List<ParseTraceStep>)
+trace 
+List<String>
+Grammar
+static Grammar defaultLabGrammar()
+Grammar
+ExperimentDemo
+void printReport(...)
+parserResult
+void
+ trace
+3.2 
+1  LR(1) 
+3.3 
+2  LR1Parser.parse 
+LR(1) 
+4.1 ParsingTableACTION 
+ (state, terminal)
+ SHIFT(s)/REDUCE(r)/ACCEPT/ERROR
+GOTO 
+ (state, nonTerminal)
+exportRows() 
+ ACTION(...)=... / GOTO(...)=... 
+4.2 
+ ParseTraceStep
+stateStack
+[0, 3, 4, 5]
+symbolStack
+[$, {, decls, stmts]
+id = num ; } $
+ACTION 
+s22 / r4 / err
+LR(1) 
+FIRST
+computeFirstSets() 
+closure
+goTo
+buildParsingTableForGrammar 
+ ACTION/GOTO
+getAction 
+ shift/reduce/accept/error
+3 
+ 1
+sample1_basic
+samples/sample1_basic.src
+{ int a; a = 1; }
+ 2
+if-else
+sample2_if_else
+samples/sample2_if_else.src
+{  int x;  if (x >= 0) x = x + 1;  else x = 0;}
+ 3
+while / do-while
+sample3_loop
+samples/sample3_loop.src
+{  int i;  i = 0;  while (i < 5) i = i + 1;  do i = i - 1; while (i > 0);}
+ 4
+{ int a; } }
+ LR(1) 
+ 4-36
+4-38 
+ 1
+3 
+ test-output 
+ 4 
+ } 
+ËÀ
+|qf[PE
+ôéÞÓ
+Å¿´
+¨¢
+éÞÓÈ½²§
+õêßÔ
+µªzoaS
+òä
+Ä¾³¨~pb
+úôéÞØÒÇ¼±¦
+
+ 1
+ 2
+¡$
+³N
+ò>
+Times New Roman
+Calibri
+MS Gothic
+Wingdings
+Consolas
+Cc
+Êf!),.:;?]}¨·
+([{·
+´

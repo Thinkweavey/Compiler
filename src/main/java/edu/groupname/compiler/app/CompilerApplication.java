@@ -6,11 +6,15 @@ import edu.groupname.compiler.lexer.LexerImpl;
 import edu.groupname.compiler.parser.LR1Parser;
 import edu.groupname.compiler.semantic.SemanticAnalyzerImpl;
 
+import java.io.PrintStream;
+import java.nio.charset.StandardCharsets;
+
 public final class CompilerApplication {
     private CompilerApplication() {
     }
 
     public static void main(String[] args) throws Exception {
+        configureConsoleUtf8();
         LR1Parser parser = new LR1Parser();
         CompilerPipeline pipeline = new CompilerPipeline(
                 new LexerImpl(),
@@ -22,11 +26,15 @@ public final class CompilerApplication {
         String source = ExperimentDemo.loadSource(args);
         PipelineReport report = pipeline.compile(source);
         ExperimentDemo.printReport(report, parser, args);
+    }
 
-        if (!report.lexicalResult().hasErrors() && report.parserResult().accepted()) {
-            System.out.println();
-            System.out.println("========== 后续阶段（实验三预留） ==========");
-            System.out.println("IR 指令条数: " + report.irProgram().instructions().size());
+    /** Use UTF-8 on Windows consoles where the default charset is not UTF-8. */
+    private static void configureConsoleUtf8() {
+        try {
+            System.setOut(new PrintStream(System.out, true, StandardCharsets.UTF_8));
+            System.setErr(new PrintStream(System.err, true, StandardCharsets.UTF_8));
+        } catch (Exception ignored) {
+            // Keep JVM default streams.
         }
     }
 }

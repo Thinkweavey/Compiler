@@ -9,6 +9,7 @@ import edu.groupname.compiler.semantic.SemanticAnalyzer;
 import edu.groupname.compiler.semantic.SemanticResult;
 
 import java.util.List;
+import java.util.Map;
 
 public class CompilerPipeline {
     private final Lexer lexer;
@@ -40,20 +41,16 @@ public class CompilerPipeline {
         }
 
         var semanticResult = semanticAnalyzer.analyze(parserResult);
-        if (semanticResult.hasErrors()) {
-            return new PipelineReport(lexResult, parserResult, semanticResult, emptyIrProgram());
-        }
-
         var irProgram = irGenerator.generate(semanticResult);
         return new PipelineReport(lexResult, parserResult, semanticResult, irProgram);
     }
 
     private static ParserResult emptyParserResult() {
-        return new ParserResult(false, List.of(), List.of(), List.of());
+        return new ParserResult(false, List.of(), List.of(), List.of(), List.of(), List.of());
     }
 
     private static SemanticResult emptySemanticResult() {
-        return new SemanticResult(List.of());
+        return new SemanticResult(List.of(), List.of(), List.of(), Map.of(), List.of());
     }
 
     private static IRProgram emptyIrProgram() {
