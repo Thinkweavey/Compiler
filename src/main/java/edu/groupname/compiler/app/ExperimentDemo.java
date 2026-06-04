@@ -32,7 +32,7 @@ public final class ExperimentDemo {
         }
 
         if (phase == 0 || phase == 3) {
-            printExperimentThree(report, syntax);
+            printExperimentThree(report, syntax, cliArgs);
         }
     }
 
@@ -92,7 +92,7 @@ public final class ExperimentDemo {
         }
     }
 
-    private static void printExperimentThree(PipelineReport report, ParserResult syntax) {
+    private static void printExperimentThree(PipelineReport report, ParserResult syntax, String[] cliArgs) {
         System.out.println();
         System.out.println("========== 实验三：语法制导翻译与中间代码 ==========");
         System.out.println("--- 语法分析过程（状态栈 / 符号栈 / 剩余输入 / 动作） ---");
@@ -101,6 +101,9 @@ public final class ExperimentDemo {
         }
 
         var semantic = report.semanticResult();
+        if (shouldPrintSemanticDetails(cliArgs)) {
+            printSemanticAnalysisDetails(syntax, semantic);
+        }
         if (semantic.hasErrors()) {
             System.out.println("--- 语义错误 ---");
             semantic.errors().forEach(error -> System.out.println(error.message()));
@@ -125,6 +128,52 @@ public final class ExperimentDemo {
             }
         }
         return false;
+    }
+
+    /** 输出规约阶段记录的语义动作、语义分析后符号表与表达式类型（可与 --exp3 联用）。 */
+    private static boolean shouldPrintSemanticDetails(String[] args) {
+        for (String arg : args) {
+            if ("--semantic".equalsIgnoreCase(arg)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private static void printSemanticAnalysisDetails(
+            ParserResult syntax,
+            edu.groupname.compiler.semantic.SemanticResult semantic
+    ) {
+        System.out.println("--- 语义动作（规约阶段记录，语义分析阶段按序重放） ---");
+        List<String> actions = semantic.semanticActions();
+        if (actions.isEmpty()) {
+            System.out.println("(无语义动作；可能语法未接受或未进入规约翻译)");
+        } else {
+            for (int i = 0; i < actions.size(); i++) {
+                System.out.println((i + 1) + ". " + actions.get(i));
+            }
+        }
+
+        if (!syntax.semanticActions().isEmpty() && !syntax.semanticActions().equals(actions)) {
+            System.out.println("--- 说明：ParserResult 与 SemanticResult 中动作列表不一致（异常） ---");
+        }
+
+        System.out.println("--- 语义分析后符号表（按出现顺序） ---");
+        if (semantic.symbols().isEmpty()) {
+            System.out.println("(无符号)");
+        } else {
+            for (String line : LexicalReporter.formatSymbolTable(semantic.symbols())) {
+                System.out.println(line);
+            }
+        }
+
+        System.out.println("--- 表达式类型（语义分析阶段登记） ---");
+        if (semantic.expressionTypes().isEmpty()) {
+            System.out.println("(无)");
+        } else {
+            semantic.expressionTypes().forEach((place, type) ->
+                    System.out.println(place + " : " + type));
+        }
     }
 
     /** 0 = 全部；1/2/3 = 仅输出对应实验章节（便于截图）。 */

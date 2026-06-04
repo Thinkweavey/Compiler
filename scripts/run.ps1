@@ -1,13 +1,15 @@
 # Run compiler on one .src file with UTF-8 console (avoids garbled Chinese on Windows).
-# Usage: .\scripts\run.ps1 samples/sample1_basic.src
-#        .\scripts\run.ps1 samples/sample1_basic.src -Brief
-#        .\scripts\run.ps1 samples/sample1_basic.src -Phase 1   # only Experiment 1 output
+# Usage:
+#   .\scripts\run.ps1 samples/sample1_basic.src
+#   .\scripts\run.ps1 samples/sample1_basic.src -Brief
+#   .\scripts\run.ps1 samples/sample1_basic.src -Phase 1
+#   .\scripts\run.ps1 samples/sample1_basic.src -Phase 3 -Semantic
+
 param(
     [Parameter(Mandatory = $true, Position = 0)]
     [string]$Source,
-
     [switch]$Brief,
-
+    [switch]$Semantic,
     [ValidateSet(0, 1, 2, 3)]
     [int]$Phase = 0
 )
@@ -27,6 +29,9 @@ if ($Brief) {
 }
 if ($Phase -gt 0) {
     $argsLine = "$argsLine --exp$Phase"
+}
+if ($Semantic) {
+    $argsLine = "$argsLine --semantic"
 }
 
 mvn -q -DskipTests compile

@@ -23,6 +23,10 @@ powershell -ExecutionPolicy Bypass -File .\scripts\run.ps1 samples/sample1_basic
 chcp 65001
 [Console]::OutputEncoding = [System.Text.Encoding]::UTF8
 mvn -q exec:java "-Dexec.mainClass=edu.groupname.compiler.app.CompilerApplication" "-Dexec.args=samples/sample1_basic.src"
+
+# 实验三额外输出：语义动作列表、语义分析后符号表、表达式类型
+powershell -ExecutionPolicy Bypass -File .\scripts\run.ps1 samples/sample1_basic.src -Phase 3 -Semantic
+# 或：mvn -q exec:java ... "-Dexec.args=samples/sample1_basic.src --exp3 --semantic"
 ```
 
 - 全量演示（完整分析表，无 `--brief`）：`powershell -ExecutionPolicy Bypass -File .\scripts\run-demo.ps1`  
