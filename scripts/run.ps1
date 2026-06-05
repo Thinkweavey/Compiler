@@ -1,9 +1,7 @@
-# Run compiler on one .src file with UTF-8 console (avoids garbled Chinese on Windows).
+# Run compiler on one .src file (UTF-8 console).
 # Usage:
-#   .\scripts\run.ps1 samples/sample1_basic.src
-#   .\scripts\run.ps1 samples/sample1_basic.src -Brief
-#   .\scripts\run.ps1 samples/sample1_basic.src -Phase 1
-#   .\scripts\run.ps1 samples/sample1_basic.src -Phase 3 -Semantic
+#   powershell -ExecutionPolicy Bypass -File .\scripts\run.ps1 samples/sample2_if_else.src
+#   powershell -ExecutionPolicy Bypass -File .\scripts\run.ps1 samples/sample2_if_else.src -Phase 3
 
 param(
     [Parameter(Mandatory = $true, Position = 0)]
@@ -24,15 +22,10 @@ $ErrorActionPreference = "Stop"
 Set-Location (Split-Path $PSScriptRoot -Parent)
 
 $argsLine = $Source
-if ($Brief) {
-    $argsLine = "$argsLine --brief"
-}
-if ($Phase -gt 0) {
-    $argsLine = "$argsLine --exp$Phase"
-}
-if ($Semantic) {
-    $argsLine = "$argsLine --semantic"
-}
+if ($Brief) { $argsLine = "$argsLine --brief" }
+if ($Phase -gt 0) { $argsLine = "$argsLine --exp$Phase" }
+if ($Semantic) { $argsLine = "$argsLine --semantic" }
 
-mvn -q -DskipTests compile
-mvn -q exec:java "-Dexec.mainClass=edu.groupname.compiler.app.CompilerApplication" "-Dexec.args=$argsLine"
+mvn -q compile -DskipTests
+if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
+mvn -q exec:java "-Dexec.args=$argsLine"

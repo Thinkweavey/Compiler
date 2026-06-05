@@ -35,6 +35,8 @@
                 <artifactId>exec-maven-plugin</artifactId>
                 <version>3.3.0</version>
                 <configuration>
+                    <mainClass>compiler.app.CompilerApplication</mainClass>
+                    <classpathScope>compile</classpathScope>
                     <systemProperties>
                         <systemProperty>
                             <key>file.encoding</key>
