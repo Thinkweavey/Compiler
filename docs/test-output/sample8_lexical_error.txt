@@ -5,7 +5,7 @@
 (a, 标识符)
 (;, 分隔符)
 (}, 分隔符)
---- 符号表（按出现顺序） ---
+--- 符号表（词法） ---
 (a, int, VARIABLE)
 --- 词法错误 ---
 Illegal character: '@' @ SourcePosition[line=1, column=7]

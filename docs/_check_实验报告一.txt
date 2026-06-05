@@ -1,287 +1,0 @@
-Root Entry
-SummaryInformation
-DocumentSummaryInformation
-ObjectPool
-Normal.dotm
-WPS Office_12.8.2.17838_F1E327BC-269C-435d-A152-05C5408002CA
-MSCD
- Htpp://Bbs.Mscode.Cc
-KSOProductBuildVer
-ICV
-2052-12.8.2.17838
-70840C4D5A18469097884302723A9598_13
-_1234567890
-_1234567891
-_1234567892
-_1234567893
-Ole
-CompObj
-ObjInfo
-CONTENTS
-Adobe Photoshop
-Adobe Photoshop 7.0
-!!#
-(../++)%
-)(,/10-..+.+!
-Ole
-CompObj
-ObjInfo
-CONTENTS
-Adobe Photoshop
-Adobe Photoshop 7.0
-	
-
-
- ##%%&)++*&$('%%##
-Ole
-CompObj
-ObjInfo
-CONTENTS
-Adobe Photoshop
-Adobe Photoshop 7.0
-
-	
-
-Ole
-CompObj
-ObjInfo
-CONTENTS
-Adobe Photoshop
-Adobe Photoshop 7.0
-WordDocument
-0Table
-Data
-WpsCustomData
-
-Object 1
-
-Object 2
-
-Object 3
-
-Object 4
-
-
-
- 10
-
- 11
-
- 12
-
- 13
-
- 14
-
- 15
-
- 16
-
- 17
- EMBED Photoshop.Image.7 \s 
-   
- EMBED Photoshop.Image.7 \s 
-   
- EMBED Photoshop.Image.7 \s 
-    
- EMBED Photoshop.Image.7 \s 
-
-  102300404    
-     
-      
-     2023      
-    
-   
- 102300403  
-   
-   
- 102300405  
-   
-     
- 102300406  
-   
-     
-2025
-2026
- edu.groupname.compiler.lexer
-LexerImpl 
- TokenCategoryLabel 
- // 
-/* */ 
- token
- ScopedSymbolTable
- registerIdentifier
- LexicalDeclarationBinder 
- int/float/bool 
- LexicalError 
- SourcePosition
- ExperimentDemo 
- CompilerApplication 
-3.1 
-Lexer
-LexicalAnalyzerResult analyze(String sourceCode)
-sourceCode
-LexicalAnalyzerResult
-LexerImpl
-LexicalAnalyzerResult analyze(String sourceCode)
-sourceCode
- index/line/column
-tokens
-errors
-symbolsInOrder
-SourceBuffer
-char charAt(int index)
-String substring(int start, int end)
-index/start/end
- char[] 
-char 
- substring
-KeywordTable
-boolean isKeyword(String lexeme)
-lexeme
-true 
- if/int 
-ScopedSymbolTable
-void registerIdentifier(String name)
-name
-void
-ScopedSymbolTable
-void bindDeclaration(String name, String typeName, SymbolKind kind, Integer arrayLength)
-name/typeName/kind/arrayLength
-void
- int/float/bool/int[] 
-LexicalDeclarationBinder
-void bindDeclarations(List<Token> tokens, ScopedSymbolTable symbolTable)
-tokens
-symbolTable
-void
- type id; 
- type[num] id; 
- bindDeclaration
-LexicalReporter
-List<String> formatTokenTuples(List<Token> tokens)
-tokens
- EOF 
- token 
-List<String>
- EOF
-LexicalReporter
-List<String> formatSymbolTable(List<Symbol> symbols)
-symbols
-symbolsInOrder()
-List<String>
-ExperimentDemo
-void printReport(PipelineReport report, LR1Parser parser, String[] args)
-report
- lexicalResult
-void
-3.2 
-main 
- CompilerPipeline 
- LexerImpl.analyze
- ExperimentDemo 
- LexicalReporter 
-1  
-3.3 
- LexerImpl.analyze 
- while 
-2  LexerImpl.analyze 
-4.1 
-registerIdentifier(String name)
- LexerImpl 
- definitionOrder
- Symbol 
- typeName 
-kind 
- VARIABLE
-bindDeclarations 
- token
- KEYWORD 
- int/float/bool 
- IDENTIFIER 
- int[num] id 
- bindDeclaration 
- int[] 
- arrayLength
-4.2 
-Symbol record
-name
-typeName
-int / float / bool / int[] / 
-int
-kind
-VARIABLE 
- ARRAY
-VARIABLE
-arrayLength
-(a, int, VARIABLE)
-(arr, int[], ARRAY, len=10)
-SourceBuffer 
-LexerImpl 
- DFA
-START
-IN_ID
-IN_NUM/IN_REAL
-ERROR 
-sample1_basic
-samples/sample1_basic.src
-{ int a; a = 1; }
-if-else 
-sample2_if_else
-samples/sample2_if_else.src
-{  int x;  if (x >= 0) x = x + 1;  else x = 0;}
-while / do 
-sample3_loop
-samples/sample3_loop.src
-{  int i;  i = 0;  while (i < 5) i = i + 1;  do i = i - 1; while (i > 0);}
-break 
-sample4_break_error
-samples/sample4_break_error.src
-{  int a;  a = 1;  break;}
-sample5_array
-samples/sample5_array.src
-{  int[10] arr;  arr[0] = 1;  arr[1] = arr[0] + 2;}
-sample6_float
-samples/sample6_float.src
-{  float x;  x = 2.5;  x = x + 1.0;}
-bool 
-sample7_bool
-samples/sample7_bool.src
-{  bool flag;  flag = true;  if (flag) flag = false;}
-sample8_lexical_error
-sample8_lexical_error
-{  Int @a;}
- LexerImpl
-SourceBuffer
-LexicalDeclarationBinder
-ScopedSymbolTable
-LexicalReporter
- DFA 
- true/false 
- docs/test-output 
- 7 
-LexerImplTest 
- CompilerPipeline 
- LR(1) 
- token 
-
-çÜÑÆ»°¥yncX
-ÐÅ¿´
-¨
-ôéÞÓÈ½²§
-ËÀµ
-~seWI
-òäÞÓÈº¬
-õçÙË½
-{m_QC
-ñëàÕÇ¹«
-f[M
-òäÖ
-ÒÇ¼±¦
-Times New Roman
-Calibri
-MS Gothic
-Wingdings
-Consolas
-Êf!),.:;?]}¨·
-([{·

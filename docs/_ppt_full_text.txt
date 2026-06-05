@@ -1,1463 +1,0 @@
-============================================================
-第1章 引论.ppt
-============================================================
---- Slide 1 ---
-1
-1
-第1章  编译系统介绍
---- Slide 2 ---
-2
-Topics
-编译概述词法分析语法分析语义分析类型检查运行环境符号表中间表示中间代码生成代码优化代码生成
---- Slide 3 ---
-3
-3
-1.1 编译程序
-编译器是什么?翻译一种语言（源语言）的程序成为等价的另一种语言（目标语言）的程序，并能报告源语言中错误的一种程序。
---- Slide 4 ---
-4
-程序设计语言
-程序设计语言：用来编写计算机程序的语言。
-程序设计语言
-高级语言低级语言：面向机器的语言
-过程式语言   Fortran,Pascal,C函数式语言   Lisp逻辑式语言   Prolog对象式语言   C++
-汇编语言机器语言
---- Slide 5 ---
-5
-5
-什么是解释程序? 读入一个可执行的程序并产生执行该程序的结果的一种程序。编译和解释的例子：C 是编译过程Scheme 是解释过程Java 结合了编译与解释过程
-解释程序
---- Slide 6 ---
-6
-6
-编译程序的工作分为两个基本部分:
-分析阶段:
-词法、语法、语义分析把源程序转换成中间表示
-综合阶段:
-从中间表示生成目标程序
-编译器的结构
---- Slide 7 ---
-7
-7
---- Slide 8 ---
-8
-8
-编译器的结构框图
-1, 2, 3 :  分析阶段4, 5, 6 :  综合阶段
---- Slide 9 ---
-9
-9
-Phase 1. 词法分析
-字符流转变为单词流
-For Example:                 字符流
-空格, 换行符等. 被过滤
-Position    :=    initial  +  rate   * 60 ;
-_______  __   _____  _  ___  _  __ _
---- Slide 10 ---
-10
-10
-Phase 2. 语法分析
-关于上页例子的分析树（Parse Tree）:
-identifier
-identifier
-expression
-identifier
-expression
-number
-expression
-expression
-expression
-assignment statement
-position
-:=
-+
-*
-60
-initial
-rate
-树的结点是利用该语言的文法来建造的
---- Slide 11 ---
-11
-11
-词法分析 – 线性的非递归的仅识别各个“单词” ，它们是该语言的Tokens语法分析--为了识别表达式的构造需要递归，正如在分析树中所见的一般是递归的语义分析决定该句子是否有且仅有一种无二义的解释
---- Slide 12 ---
-12
-12
-Phase 3. 语义分析
-找复杂的语义错误和支持代码生成分析树根据语义动作进行扩展
-Compressed Tree
-Conversion Action
---- Slide 13 ---
-13
-13
-类型检查在语义分析阶段:
-Real = int + char ;A[int] = A[real] + int ;
---- Slide 14 ---
-14
-符号表(symbol table)
-符号表是一个数据结构，它使得标识符与相关的属性结合在一起。标识符的类型信息是在程序声明中被获取的.
---- Slide 15 ---
-15
-出错处理
-编译程序在各个阶段应诊断和报告源程序中的错误，包括词法错误，语法错误，语义错误。编译程序应报告出错地点，并给出简明准确的提示信息。
---- Slide 16 ---
-16
-16
-三个阶段:Linear / Lexical Analysis线性/词法分析: 从左到右扫描识别 Tokens（或单词）token: 有独立意义的字符串Hierarchical Analysis分层分析:  把Tokens组成有意义的结构（句子）Semantic Analysis语义分析: 对构件进行检查保证构件的正确性（有意义）
-编译器的分析
---- Slide 17 ---
-17
-17
-编译器的综合阶段
-中间代码生成代码优化目标代码生成
---- Slide 18 ---
-18
-18
-例子
---- Slide 19 ---
-19
-19
-Reviewing the Entire Process
-Errors
-temp1 = inttoreal(60)temp2 = id3 * temp1temp3 = id2 + temp2id1 = temp3
-temp1 = id3 * 60.0id1 = id2 + temp1
-MOVF id3, R2MULF #60.0, R2MOVF id2, R1ADDF R1, R2MOVF R1, id1
-position ....initial ….rate….
-符号表
-3 address code
---- Slide 20 ---
-20
---- Slide 21 ---
-21
-21
-Front End 前端  :   分析（词法、语法、语义）  + 中间代码生成
-Back End后端   :   代码生成+  优化
-vs.
-遍（Passes）数:A pass: 指需要读/写中间代码文件一次
-越少遍数: 越高的效率.但是:越少遍数需要更成熟的存储管理和编译程序各个阶段之间的相互作用。因此，需要综合考虑 ……..
---- Slide 22 ---
-1.6程序设计语言基础
-22
---- Slide 23 ---
-23
---- Slide 24 ---
-24
---- Slide 25 ---
-变量作用域范围
-25
-
-============================================================
-第2章 一个简单的语法制导翻译器.ppt
-============================================================
---- Slide 1 ---
-1
-第2章A Simple One－Pass Compiler
-一个简单的单遍编译程序
---- Slide 2 ---
-2
---- Slide 3 ---
-3
---- Slide 4 ---
-4
---- Slide 5 ---
-5
-用于定义语法的工具—文法
-A Context-free Grammar (CFG) 用于定义程序语言的语法A CFG（上下文无关文法） : A Set of Tokens or Terminal Symbols   终结符集A Set of Non-terminals      非终结符集A Set of Production Rules     产生式规则集每个规则为如下形式：NT  {T, NT}* 其中一个非终结符号为   开始符号
---- Slide 6 ---
-6
-语法的例子
-list  list + digitlist  list - digitlist  digitdigit  0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9(the “|” means OR)(So we could have writtenlist  list + digit |  list - digit | digit  )
---- Slide 7 ---
-7
-根据上面的文法可以产生串9-5+2：list   list + digit         list - digit + digit         digit - digit + digit         9 - digit + digit         9 - 5 + digit         9 - 5 + 2
-P1 :  list   list + digitP2 :  list   list - digitP3 :  list   digitP4 : digit   9P4 : digit   5P4 : digit   2
---- Slide 8 ---
-8
-推导可以经由分析树（Parse Tree）表示。
-list   list + digit         list - digit + digit         digit - digit + digit         9 - digit + digit         9 - 5 + digit         9 - 5 + 2
---- Slide 9 ---
-9
-例子
-该文法定义了什么语言 ? “”表示什么 ?
-block   begin  opt_stmts endopt_stmts   stmt_list |  stmt_list   stmt_list ; stmt | stmt
---- Slide 10 ---
-10
-语法分析树
-语法分析树的特点:树根用Start Symbol （开始符号）来标记叶结点是 Token 或 （空串）内结点 (非叶) 是 Non-Terminal （非终结符）如果 A   x1x2…xn,  那么 A 是个内结点;  x1x2…xn 是 A 的儿子和可以是 Non-Terminals 或 Tokens
---- Slide 11 ---
-11
-文法的二义性
-Why is this a Problem ?
-Grammar:string   string + string | string – string | 0 | 1 | …| 9
-Two derivations (Parse Trees) for the same token string.
---- Slide 12 ---
-12
-文法的递归
-Left vs. Right
-right  letter = right | letterletter   a | b | c | …| z
---- Slide 13 ---
-13
-用文法规则定义数学运算的优先级
-What does  9 + 5 * 2  mean?
-Typically
-(  )*    /+   -
-is precedence order
-expr   expr + term | expr – term | termterm   term * factor | term / factor | factorfactor   digit | (  expr  )digit   0 | 1 | 2 | 3 | … | 9
---- Slide 14 ---
-14
---- Slide 15 ---
-15
-Syntax-Directed Translation语法制导翻译
-把属性与文法规则&构造相结合，随着分析的进展进行语义翻译Our Example Uses Infix to Postfix Notation Translation for ExpressionsTranslation May Be Defined Inductively As: Postfix(e), e is an Expression
-1.    If E is a variable | constant   Postfix(E) = E2.    If E is E1 op E2   Postfix(E)               = Postfix(E1 op E2) = Postfix(E1) Postfix(E2) op3.    If E is (E1)   Postfix(E) = Postfix(E1)
-Examples:
-( 9 – 5 ) + 2    9 5 – 2 +9 – ( 5 + 2 )    9 5 2 + -
---- Slide 16 ---
-16
-每一产生式有一Semantic Rules（语义规则）的集合每一文法符号有一Attributes（属性）的集合“t” 是下面例子中的文法符号的属性, i.e.,如何输出串  9 + 5  - 2?
---- Slide 17 ---
-17
-CFG的 每条产生式规则有一个语义规则Note:  关于 expr 的语义规则利用综合属性，综合属性的值是从其它规则得到的。
---- Slide 18 ---
-18
-注释语法分析树
-语义规则如何工作?什么类的树遍历要被执行?如何能更紧密地使语义规则与产生式规则结合起来?
---- Slide 19 ---
-19
-翻译模式
-把语义规则嵌入到产生式的右部的适当位置.
---- Slide 20 ---
-20
-自顶向下语法翻译
-type  simple          |   id           | array [ simple ] of  typesimple  integer            |    char            |    num dotdot num
-输入 :     array [ num dotdot num ] of integer先用产生式 type  array [ simple ] of type
-Start symbol
---- Slide 21 ---
-21
-Input :  array [ num dotdot num ] of integer
-Initial Lookahead symbol
-type
-?
---- Slide 22 ---
-22
-Top-Down Parse (type = start symbol)
-Input :  array [ num dotdot num ] of   integer
---- Slide 23 ---
-23
-自顶向下语法分析 递归下降与预测分析
-array [ num dotdot num ] of   integer
-type  simple          |   id           | array [ simple ] of  typesimple  integer            |    char            |    num dotdot num
-procedure  match ( t : token ) ;begin          if  lookahead = t  then                    lookahead  : =  nexttoken          else  errorend ;
---- Slide 24 ---
-24
-procedure  type ;begin         if  lookahead  is in { integer, char, num }  then  simple         else if  lookahead  = ‘’  then  begin  match (‘’ ) ;  match( id ) end             else if  lookahead = array  then  begin                     match( array ); match(‘[‘); simple; match(‘]’); match(of); type                    end                    else  errorend ;procedure  simple ;begin         if  lookahead = integer  then   match ( integer );         else if  lookahead = char  then  match ( char );                else if  lookahead = num  then  begin                           match (num); match (dotdot); match (num)                       end                       else  errorend ;
---- Slide 25 ---
-25
-左递归的消除
-expr  expr + term  |  expr - term  |  termterm   0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-expr  term  restrest   + term  rest  |  - term  rest |  term   0 | 1 | 2 | 3 | 4 | 5 | 6 | 7 | 8 | 9
-*
-New Semantic Actions !
-rest   + term {print(‘+’)} rest  |  - term {print(‘-’)} rest |  
-左递归产生死循环消除左递归方法:
-AA|becomesA RR R| 
---- Slide 26 ---
-26
---- Slide 27 ---
-27
-rest
---- Slide 28 ---
-28
-词法分析器模型
-uses   getchar ( ) to read character
-pushes back c using ungetc (c , stdin)
-returns token to caller
-tokenval
-Sets global variable to attribute value
-lexan ( )lexical analyzer
---- Slide 29 ---
-29
-输入Token 串被分割出来 空格和注释被过滤掉 带有相关联值的单个Tokens 被识别出来 符号表被初始化，对于每个“合适的”Token的登记项被构造在什么条件下一个字符被后退回去?
---- Slide 30 ---
-30
-例子
-function  lexan:  integer ;var    lexbuf :   array[ 0 .. 100 ] of  char ;         c :            char ;begin           loop begin                   read a character into c ;                   if  c  is a blank or a tab  then                           do nothing                   else if  c  is a newline  then                           lineno : = lineno + 1                   else if  c  is a digit  then  begin                           set  tokenval  to the value of this and following digits ;                           return  NUM                   end
---- Slide 31 ---
-31
-算法描述
-else if  c  is a letter  then  begin                          place  c  and successive letters and digits into  lexbuf ;                          p  : = lookup ( lexbuf ) ;                          if  p  = 0  then                                  p : = insert ( lexbf, ID) ;                          tokenval : = p                          return  the token field of table entry p                  end                  else                          set  tokenval  to NONE ;  / * there is no attribute * /                          return  integer encoding of character c                  endend
-Note: Insert / Lookup operations occur against the Symbol Table !
---- Slide 32 ---
-32
-符号表
-ARRAY  symtable   lexptr        token      attributes                       div                       mod                       id                       id
-01234
-ARRAY  lexemes
-OPERATIONS:  Insert (string, token_ID)                            Lookup (string)NOTICE:            Reserved words are placed into                             symbol table for easy lookupAttributes may be associated with each entry, i.e.,                             Semantic Actions                            Typing Info:  id  integer                             etc.
---- Slide 33 ---
-33
---- Slide 34 ---
-34
-递归下降语法分析器
---- Slide 35 ---
-35
-目标代码生成例子
-编译处理的后端 - Which Will Not Be Our Emphasis 重点集中在前端
-••  Abstract Stack Machine for Intermediate         Code Generation: (i) basic arithmetic, 	(ii) stack, (iii) flow control    ••  L-value  Vs.  R-value of an identifier              I : = 5 ;                L - Location              I : = I + 1 ;           R - Contents
---- Slide 36 ---
-36
-本章术语
-语法和语义上下文无关文法，BNF终结符，非终结符，产生式，开始符串，推导，推导和分析树文法的语言，二义文法，运算符的结合和优先语法制导的翻译中缀表示，后缀表示
-
-============================================================
-第3章 词法分析.ppt
-============================================================
---- Slide 1 ---
-第3章   词法分析
---- Slide 2 ---
-编译器的多个阶段
-1, 2, 3 :  分析阶段（重点）4, 5, 6 :  综合阶段
---- Slide 3 ---
-词法分析
-语法分析
-符号表
-源程序
-标记
-取得下个标记
-重要的问题:    图中每个盒子的责任是什么 ?  注意的焦点在词法分析和语法分析
---- Slide 4 ---
-单词、模式、词素
---- Slide 5 ---
-一些语言空格无意义带来的困难（Fortran语言）
---- Slide 6 ---
-单词的信息收集进符号表
---- Slide 7 ---
-缓冲区
-Current token
-lexeme beginning
-forward (scans ahead to find pattern match)
---- Slide 8 ---
-3.3单词的描述
-3.3.1串和语言
-字符串banana的前缀、bab、banana…后缀、ana、 banana…子串banana、nan、 …子序列baan …banana真前缀：banan、bana、ban、ba、b
---- Slide 9 ---
-定义单词
-字母表 :
-符号的有限集 {0,1}, or {a,b,c}, or {n,m, … , z}
-串 :
-来自字母表的符号的有限序列0011   or   abbca   or   AABBC …A.K.A.    word / sentence
-如果S  是个串, 那么 |S| 是S的 长度, i.e. 在串S中 符号的个数.，ε :  空串,  |  | = 0
---- Slide 10 ---
-一个 正则表达式 是规则的集合 / 用于从一个字母表构造符号串的技术。设   是个字母表, r 是个正则表达式那么 L(r)  是个由 r 的规则所刻画的语言。
-正则表达式
---- Slide 11 ---
- 是个正则表达式，表示 { }如果  a 是在  中, a是个正则表达式，表示 {a}设 r 和 s是正则表达式，其语言分别是L(r) 和 L(s).  则           (a)  (r) | (s)是正则表达式 L(r)  L(s)          (b)  (r)(s)是正则表达式 L(r) L(s)          (c)  (r)*是正则表达式 (L(r))*          (d)  (r)是正则表达式 L(r) 都是左结合.
---- Slide 13 ---
-Regular Definitions:  把名字与正则表达式结合
-For Example :  PASCAL IDs
-letter    A | B | C | … | Z | a | b | … | zdigit   0 | 1 | 2 | … | 9 id   letter ( letter | digit )*
-简化符号:      “+” : one or more       r* = r+ |    &    r+ = r r*     “?” : zero or one	r?=r |      [range] : set range of characters (replaces “|” )                   [A-Z] = A | B | C | … | Z
-Using Shorthand : PASCAL IDs
-id  [A-Za-z][A-Za-z0-9]*We’ll Use Both Techniques
---- Slide 14 ---
-我们该如何使用至今为止学到的概念来帮助识别一个源语言的tokens?
-Assume Following Tokens:        if,  then,  else,  relop,  id,  num
-What language construct are they used for ?
-Given Tokens, What are Patterns ?
-if         ifthen    thenelse     elserelop   < | <= | > | >= | = | <>id        letter ( letter | digit )*num   digit + (. digit + ) ? ( E(+ | -) ? digit + ) ?
-What does this represent ?       What is  ?
-Grammar:stmt  	|if expr then stmt	|if expr then stmt else stmt	|expr   term relop term | termterm  id | num
---- Slide 16 ---
-3.4单词的识别
---- Slide 18 ---
-状态转换图
---- Slide 19 ---
-3.5词法分析器描述的语言
-用Lex建立一个词法分析器
---- Slide 20 ---
-有穷自动机的用途有穷自动机的分类确定的有穷自动机(DFA)DFA定义(五元组)DFA的表示方式(两种)DFA与正规式等价(一个结论) 不确定的有穷自动机(NFA)NFA定义(与DFA比较)有弧必是NFA
-3.6有穷自动机
---- Slide 21 ---
-一个有限自动机 (FA) 可能是确定的 (DFA) : 一个状态关于给定的输入符号只有一个转移。不确定的(NFA) :一个状态关于给定的输入符号可以由任意多个转移。两个识别的是相同的语言: 正则集合 (由正则表达式生成的语言).Time : DFA 更快Space: NFA 更小
---- Slide 22 ---
-NFAs & DFAs
-不确定的有限自动机 (NFAs) 易于 表示正则表达式, 但多少有点 不精确.确定的有限自动机(DFAs) 去表示正则表达式需要 更多复杂性, 但 更精确.
---- Slide 23 ---
-NFA
-一个 NFA 是数学模型，由如下组成 : S, 状态的一个集合 , 输入字母表的符号集合 move, 转移函数.   move(state, symbol)  set of states move : S  ({})  Pow(S) 一个状态, s0  S, 开始状态 F  S, 最终或接受状态的一个集合.
---- Slide 24 ---
-DFA的例子
-它接受什么样的语言?
-识别同种语言的NFA:
---- Slide 25 ---
-一个实际的例子:识别一切的关系运算符
---- Slide 26 ---
-NFA的例子
-S = { 0, 1, 2, 3 }s0 = 0F = { 3 } = { a, b }
-它定义什么了语言 ?
-转换表是什么 ?
---- Slide 27 ---
-NFA 如何工作?
-给定一个输入符号串，我们跟踪它的移动  若无更多的输入同时到达一个终态, 则接受
-例子:  输入:  ababb
-move(0, a) = 1move(1, b) = 2move(2, a) = ? (未定义)拒绝 !
--或者-
-move(0, a) = 0move(0, b) = 0move(0, a) = 1move(1, b) = 2move(2, b) = 3接受 !
---- Slide 28 ---
-并非所有路径都是可接受的。
-aabb 是可接受的路径 :   0  0  1  2  3但… 若沿着这样的路径该有效串会被拒绝:0  0  0  0  0
---- Slide 30 ---
-id :
-delim :
-return( get_token(), install_id())
-start
-letter
-9
-other
-letter or digit
-*
-Either returns ptr or “0” if reserved
---- Slide 31 ---
-Questions:   Is ordering important for unsigned #s ?                     Why are there no TDs for  then, else, if ?
-return(num, install_num())
---- Slide 32 ---
-state = 0;token nexttoken(){   while(1) {       switch (state) {       case 0:   c = nextchar();          /* c is lookahead character */          if (c== blank || c==tab || c== newline) {             state = 0;             lexeme_beginning++;                /* advance beginning of lexeme */          }          else if (c == ‘<‘) state = 1;          else if (c == ‘=‘) state = 5;          else if (c == ‘>’) state = 6;          else state = fail();          break;          … /* cases 1-8 here */
-How does this work?How can it be extended?
-Is it a good design?
-What does this do?
---- Slide 33 ---
-case 9:   c = nextchar();          if (isletter(c)) state = 10;          else state = fail();          break;       case 10;  c = nextchar();          if (isletter(c)) state = 10;          else if (isdigit(c)) state = 10;          else state = 11;          break;       case 11;  retract(1); install_id();          return ( gettoken() );          … /* cases 12-24 here */       case 25;  c = nextchar();          if (isdigit(c)) state = 26;          else state = fail();          break;       case 26;  c = nextchar();          if (isdigit(c)) state = 26;          else state = 27;          break;       case 27;  retract(1); install_num();          return ( NUM );    }   }   }
-Case numbers correspond to transition diagram states !
---- Slide 34 ---
-int state = 0,  start = 0;Int lexical_value;    /* to “return” second component of token */Int fail(){    start = state;     forward = lexeme beginning;     switch (start) {        case 0:   start = 9;  break;        case 9:   start = 12; break;        case 12:  start = 20; break;        case 20:  start = 25; break;        case 25:  recover();  break;        default:   /* compiler error */     }     return start;}
-What other actions can be taken in this situation ?
---- Slide 35 ---
-需要回退一个字符.
---- Slide 36 ---
-For Example:
-Token                 Symbolic ID    if            1 then           2 else           3>,>=,<,…        4  :=            5  id                              6    int                              7    real                            8
-REs --- NFA --- DFA  (program for simulation)
-algs
-algs
---- Slide 38 ---
-3.7 NFA到DFA的转换一个定理：设L为一个由不确定的有穷自动机接受的集合，则存在一个接受L的确定的有穷自动机。a.子集法思想b.算法步骤首先定义对状态集合I的有关运算：1.状态集合I的-闭包，表示为-Closure(I)。2.状态集合I的a弧转换，表示为move(I,a)。
---- Slide 39 ---
-NFA到DFA的转换
-从 状态 0, 若没有任何输入我们可以到达哪些状态 ?这可以组成一个新的状态: 0,1,2,6,8    如何定义在新状态上的转换 ?
---- Slide 40 ---
-哪些状态是终态 ?
-如何处理A, B, C, D上没有定义的状态变换 ?
---- Slide 41 ---
-一个例子
-NFA:                                                               (a | b)*abb
-开始我们计算:  -closure(0)     (0状态的-闭包)-closure(0) = {0, 1, 2, 4, 7}  (经任意弧而能到达的状态集合)令 {0, 1, 2, 4, 7}=A是DFA, D的一个新状态。
---- Slide 42 ---
-续（1）
-第二步 , 我们计算 :  a : -closure(move(A,a))   and                                    b : -closure(move(A,b)) a : -closure(move(A,a)) = -closure(move({0,1,2,4,7},a))先求得 {3,8} ( 因为 move(2,a)=3 and move(7,a)=8)再求-闭包:   -closure({3,8}) = {1,2,3,4,6,7,8}(因为 36 1 4,  6 7,  and 1 2  一切通过 -moves)令 {1,2,3,4,6,7,8}=B是一个新状态。定义  D[A,a] = B.
-b : -closure(move(A,b)) = -closure(move({0,1,2,4,7},b)) 先求得 {5}   ( 因为 move(4,b)=5) 再求-闭包:   -closure({5}) = {1,2,4,5,6,7}(因为 56 1 4,  6 7,  and 1 2一切通过 -moves)令 {1,2,4,5,6,7}= C是一个新状态。定义 D [A,b] = C.
---- Slide 43 ---
-续（2）
-第三步 , 我们计算, 状态B在{a,b}上的转换 a : -closure(move(B,a)) = -closure(move({1,2,3,4,6,7,8},a))= {1,2,3,4,6,7,8} = B定义  D[B,a] = B.b : -closure(move(B,b)) = -closure(move({1,2,3,4,6,7,8},b))= {1,2,4,5,6,7,9} = D定义  D[B,b] = D.
-第四步 , 我们计算, 状态C在{a,b}上的转换a : -closure(move(C,a)) = -closure(move({1,2,4,5,6,7},a))= {1,2,3,4,6,7,8} = B定义  D[C,a] = B.b : -closure(move(C,b)) = -closure(move({1,2,4,5,6,7},b))= {1,2,4,5,6,7} = C定义  D[C,b] = C.
---- Slide 44 ---
-续（3）
-第五步 , 我们计算, 状态D在{a,b}上的转换a : -closure(move(D,a)) = -closure(move({1,2,4,5,6,7,9},a))= {1,2,3,4,6,7,8} = B定义  D[D,a] = B.b : -closure(move(D,b)) = -closure(move({1,2,4,5,6,7,9},b))= {1,2,4,5,6,7,10} = E定义  D[D,b] = E.
-最后,我们计算, 状态E在{a,b}上的转换a : -closure(move(E,a)) = -closure(move({1,2,4,5,6,7,10},a))= {1,2,3,4,6,7,8} = B定义  D[E,a] = B.b : -closure(move(E,b)) = -closure(move({1,2,4,5,6,7,10},b))= {1,2,4,5,6,7} = C定义  D[E,b] = C.
---- Slide 46 ---
-续（4）
-给出 DFA 的状态转换表:
-start
-b
-b
-b
-b
-b
-a
-a
-a
-a
-a
---- Slide 47 ---
-子集构造算法
---- Slide 48 ---
-计算-closure算法
---- Slide 49 ---
-3.7.4  正规表达式构造NFA
-正规式和有穷自动机的等价性由以下二点说明：对于上的NFA M,可以构造一个上的正规式R，使得L(R)=L(M)。对于上的正规式R，可以构造一个上的NFA M,使得L(M)=L(R)。有穷自动机转化为正规式：
-R2
-3
-R1
-1
-2
-1
-2
-2
-R3
-1
-a.b.c.
-R1
-R2
-3
-R1
-R2
-R1R2
-R1R2* R3
-1
-2
-1
-2
-1
-2
-R1 | R2
---- Slide 50 ---
-正规式转化为非确定有穷自动机(NFA)：
-“语法制导”:按正规式的语法规则指引构造过程。第一步：划分出正规式的子表达式                                  中的字母                  r | s                  rs                  r*第二步 : 为每个子表达式构造相应的NFA”片断”第三步：将得到的NFA“片断”按一定规则拼接成NFA
---- Slide 51 ---
-NFA片断拼接规则
-1. 对于正规式所构造的 NFA为：
-2. 对于正规式a , a  ,所构造的 NFA为：
---- Slide 52 ---
-3. 若 s, t 是上的正规式, 相应的NFA为N(s)和N(t)，则 (a) 对正规式R = s|t 所构造的NFA(R)如下:
-X , y分别是NFA(R)的初态和终态，原来的N(s)和N(t)的初态和终态已不存在。
---- Slide 53 ---
-N(s) 的初态与N(t)的终态分别成了NFA(R)的初态和终态。
---- Slide 54 ---
-X , y分别是NFA(R)的初态和终态，原来的N(s)的终态到N(s)的初态有一条边(为什么?) 。
-3.(c)对于正规式R = s*，所构造的NFA(R)如下:
---- Slide 55 ---
-“语法制导”构造的特点：
-N(r) 的状态数至多是 (字母个数 + 操作符数)*2。N(r) 只有一个初态和一个终态。N(r) 中的每个状态至多有一条标记为 a的出边或者至多有两条标记为的出边。需要仔细对所有状态进行命名 !
-令 r 是一个正规式, 那么用该方法构造的 NFA 为N(r)
---- Slide 56 ---
-详细的例子
-先看书本  例3.24(课本102页) - (a | b)*abb第2例 -  (ab*c) | (a(b|c*))该正规式的分析树如下:
-它的 NFA是什么?  我们一起来构造它 !
---- Slide 58 ---
-c
-
-
-
-
-r9 : r7 | r8
-
-
-b
-c
-
-
-
-
-r12 : r11  r10
-
-
-b
-a
-
-
-
-
---- Slide 59 ---
-最后一步
-r13 : r5 | r12
---- Slide 60 ---
-3.9.6 DFA的最小化
-一个有穷自动机可以通过消除多余状态和合并等价状态而转换成一个最小的与之等价的有穷自动机。    第一步：消除多余状态    第二步：合并等价状态    两个状态s和t等价的条件：    a.一致性条件    b.蔓延性条件    分割法思想：    把DFA分成一些不相交的子集，使得任何不同的两子集的状态都是可区别的，而同一子集中的任何两个状态都是等价的。
---- Slide 61 ---
-一个例子
-D
-C
-A
-B
-b
-b
-a
-a
-a
-b
-b
-F
-a
-b
-C,D
-A
-B,F
-b
-a
-a
-b
-b
-a
-a
-最小化 DFA:
-start
-start
---- Slide 63 ---
-存在一些正规式，它们的最小DFA也有许多状态，其  状态是正规表达式大小的指数。
-|r| 是正规表达式的长度。
---- Slide 64 ---
-思考题
-子集构造法中的两个重要运算-Closure(I)和move(I,a)若让计算机来完成需要什么样的数据结构及如何使用(写出伪代码)。
---- Slide 65 ---
-本章要点
-词法分析程序的工作过程。DFA与NFA的定义。NFA转化为DFA(子集构造法)并最小化(分割法)。正规式到DFA的转化。
-
-============================================================
-第4章 LL语法分析.ppt
-============================================================
---- Slide 1 ---
-1
-第4章: 语法分析
-第1节~第4节
---- Slide 2 ---
-2
-语法分析概述 :   上下文无关文法 设计文法  顶下分析 递归下降 & 预测分析 LL 底上分析 LR & LALR
---- Slide 3 ---
-3
-中间代码生成
-正则表达式
-其他的语法分析类型检查、语义分析
---- Slide 4 ---
-4
-不同类型错误在不同阶段被发现
-语法错误的识别 / 处理常见的程序错误类型:Lexical :  误拼写Syntactic :  丢失, token的顺序错误Semantic :  不兼容的类型Logical :  无限循环 / 无限递归调用大量的错误处理发生在语法分析期间
---- Slide 5 ---
-5
-错误处理
-检测错误 找到错误发生的位置 清晰 / 准确表达 恢复到 (pass over) 能继续下去和继续找以后的错误 不要影响“正确”程序的编译
---- Slide 6 ---
-6
-上下文无关文法
-正则表达式           词法分析的基础           表示正则语言 Context Free Grammars 上下文无关文法           语法分析的基础            表示语言的构造           刻画上下文无关语言的特征
-例子:  anbn , n  1  :  是正则的吗 ?
---- Slide 7 ---
-7
-上下文无关文法   定义
-一个 Context Free Grammar, CFG, 通过  T, NT, S, PR来描述,  这里:T: 该语言的终结符/ tokensNT: 非终结符，它指示该文法&在该语言中可生成的串的集合S: 开始符号, SNT, 它定义该语言的所有串PR: 产生式规则，用于指示 T 和 NT 如何结合以生成该语言的合法串                PR: NT  (T | NT)*像正则表达式 / DFA / NFA,  一个上下文无关文法是数学模型
---- Slide 8 ---
-8
-举例
-Derivation推导:  文法规则应用和替换的一个序列，它转换一个起始的非终结符称为一个终结符/token的集合简而言之: 文法/ 产生式规则允许我们“重写”和“识别”正确的语法。
---- Slide 9 ---
-9
-举例
---- Slide 10 ---
-10
-语法基本概念
---- Slide 11 ---
-11
-文法与语言
-设G 是开始符号为 S的一个上下文无关文法，那么  S W (其中 W 中没有非终结符) 表示由G生成的语言， 记为 L(G). 于是  WL(G)   S W.
-+
-+
-W : 是 G的一个句子
-当 S  (且  中可以有非终结符) 它被称为 G的一个句型.
-*
-EXAMPLE: id * id   是个句子有如下推导:               E E * E  id * E  id * id E  id * id
---- Slide 12 ---
-12
-语法分析树
--（id + id）的语法分析树
---- Slide 13 ---
-13
-语法树
-考虑表达式文法:E  E+E | E*E | (E) | -E | idLeftmost derivations of     id + id * id
-E  E + E
---- Slide 14 ---
-14
---- Slide 15 ---
-15
-E  E * E     E + E * E     id + E * E     id + id * E     id + id * id
-两种最左推导!
---- Slide 16 ---
-二义性文法
-16
---- Slide 17 ---
-17
-二义性文法
-考虑以下文法:
-stmt  if expr then stmt          |  if expr then stmt else stmt          |  other  (any other statement)
-一个例子
---- Slide 18 ---
-18
-If E1 then  if E2 then S1 else S2
-if  E1  then     if  E2  then         S1       else         S2
-if  E1  then     if  E2  then         S1else         S2
-vs.
---- Slide 19 ---
-19
-Form 1:
-Form 2:
---- Slide 20 ---
-20
-消除二义性
-原文法:
-stmt  if expr then stmt          |  if expr then stmt else stmt          |  other  (any other statement)
-消除二义性后的文法:
-stmt  matched_stmt | unmatched_stmtmatched_stmt     if expr then matched_stmt else matched_stmt | other unmatched_stmt  if expr then stmt                                 |  if expr then matched_stmt else unmatched_stmt
---- Slide 21 ---
-21
-正则表达式 :  词法分析的基础Reg. Expr.  生成/代表正则语言Reg. Languages  最小, 最容易定义的语言类上下文无关文法:  语法分析的基础CFGs  表示上下文无关语言CFLs上下文有关  包含更强有力的语言
-anbn – CFL that’s not regular!
-Try to write DFA/NFA for it !
---- Slide 22 ---
-22
-左递归产生的问题 ?
-Consider:              E  E + T  |  T              T  T * F  |  F              F  ( E )  |  id
-Derive :  id + id + id   E  E + T 
-E  E + T  |  T E  E + T  T + TE  E + T  E + T + T  T + T + T   
---- Slide 23 ---
-23
-消除左递归
-取所有关于 A 的产生式并排序为:  A  A1 | A2 | … | Am |  1 | 2 | … | n 其中 i 不以 A打头.现在应用上述的概念:  A  1A’ | 2A’ | … | nA’   A’  1A’ | 2A’ | … | m A’ | 
---- Slide 24 ---
-24
-Problem: 如果左递归是两层或以上深度, 这就不行了
---- Slide 25 ---
-25
-算法:消除左递归
---- Slide 26 ---
-26
-举例
-Apply the algorithm to:       A1  A2a | b|                                                A2  A2c | A1d
-i = 1
-For A1 there is no left recursion
-i = 2
-for j=1 to 1 do   Take productions:  A2  A1  and replace with                                      A2  1  | 2   | … |  k |                      where     A1 1  | 2   | … |  k   are A1 productions        in our case  A2  A1d  becomes  A2  A2ad | bd | d
-What’s left:  A1 A2a | b |             A2  A2 c | A2 ad | bd | d
---- Slide 27 ---
-27
-消除A2的左递归
-A1 A2a | b |   A2  A2 c | A2 ad | bd | d
-Recall:  A  A1 | A2 | … | Am |  1 | 2 | … | n   A  1A’ | 2A’ | … | nA’   A’  1A’ | 2A’ | … | m A’ | 
-Apply to above case.  What do you get ?
---- Slide 28 ---
-28
-左公共因子
-回顾一下，预测分析需要不相交的FIRST集合.举例Stmt →if expr then stmt else stmt | if expr then stmt	A→1 | 2 等价于 	A →A' , A' →1 |2   	.
---- Slide 29 ---
-29
-消除左公共因子
-stmt  if expr then  stmt else stmt                    | if expr then  stmt
-A  1 | 2                             : if expr then  stmt                                            1: else stmt   2 : 
-Transform to:  A   A’  A’  1 | 2
-EXAMPLE:stmt  if expr then  stmt  restrest  else stmt | 
---- Slide 30 ---
-30
-举例
-stmt  if expr then stmt | if expr then stmt else stmt | other
-stmt  matched_stmt | unmatched_stmtmatched_stmt     if expr then matched_stmt else matched_stmt | other unmatched_stmt  if expr then stmt                                 |  if expr then matched_stmt else unmatched_stmt
---- Slide 31 ---
-31
-左递归消除 – 当选择规则时避免无限循环
-A  A | 
-A  A’ A’  A’ | 
-EXAMPLE:
---- Slide 32 ---
-32
-上下文有关文法 – 举例
-Examples:L1 = { wcw | w is in  (a | b)* }   : 程序先声明后引用L2 = { an bm cn dm | n  1,  m  1 }  an bm : 形参  cn dm  : 实参
---- Slide 33 ---
-33
-上下文无关文法及其语言
-L3 = { w c wR  |  w is in  (a | b)* }L4 = { an bm cm dn  | n  1,  m  1 } L5 = { an bn cm dm  | n  1,  m  1 } L6 = { an bn  | n  1 }
---- Slide 34 ---
-34
-Solutions
-L3 = { w c wR  |  w is in  (a | b)* }L4 = { an bm cm dn  | n  1,  m  1 } L5 = { an bn cm dm  | n  1,  m  1 } L6 = { an bn  | n  1 }
-S  a S a  |  b S b  |  c
-S  a S d  |  a A d A  b A c  |  bc
-S  XY X  a X b  |  abY  c Y d  |  cd
-S  a S b  |  ab
---- Slide 35 ---
-35
-举例
-L2 = { an bm cn dm | n  1,  m  1 }S  a A c HA  a A c | B B  b B D | b D D c  c DD D H  D H dc D H  c d
---- Slide 36 ---
-36
-4.4 自顶向下语法分析
-目的:	对一个输入串找最左推导, 或对一个输入串从根构造一棵分析树和以前序（先父亲，然后儿子）建立该分析树的结点讨论确定性的特殊情形– 预测语法分析一般情形是不确定的 (backtracking回溯)
---- Slide 37 ---
-37
-递归下降语法分析
-基于输入符号选择产生式规则 可能要求回溯以纠正错误的选择. Example:      S  c A d                         A  ab | a
-input:  cad
-S
-a
-cad
-c
-d
-A
---- Slide 38 ---
-38
-预测语法分析 : 非递归
-no left recursion  无左递归 apply left factoring  消除左公共因子 remove -moves  消除-转移 当文法满足上述条件时，我们就可以利用当前的输入符号与要被扩展的非终结符相结合以唯一地确定下一动作 利用转移图:对该文法的每个非终结符进行如下:1. 建立一个初始和最终的状态2. 如果 A X1X2…Xn 是产生式, 增加边为X1, X2, … , Xn的路径 一旦转移图被开发，就可应用直截了当的技术是产生式和可能的递归用转移图表示出来.
---- Slide 39 ---
-39
-递归下降
---- Slide 40 ---
-40
-main(){  TD_E();}
-TD_T(){  TD_F();  TD_T’();}
-TD_E(){  TD_T();  TD_E’();}
-TD_E’(){  token = get_token();  if token = ‘+’ then    { TD_T(); TD_E’(); }}
-TD_F(){  token = get_token();  if token = ‘(’ then    { TD_E(); match(‘)’); }  else    if token.value <> id then        {error + EXIT}    else      ...}
-TD_T’(){  token = get_token();  if token = ‘*’ then    { TD_F(); TD_T’(); }}
---- Slide 41 ---
-41
-Example
-Our well-worn example !
-Table M
---- Slide 42 ---
-42
-构造分析表 M !   1st :  关于文法计算 First & Follow   2nd:  应用关于分析表的建造算法
-定义:   First:  设   是文法符号串.  First() 是在的任一可能推导中出现的第一个打头的终结符.  NOTE: 如果   , 则  属于 First( ).   Follow: 设 A 是非终结符.  Follow(A) 是所有句型中直接出现在A的右边的终结符a的集合.  (S  Aa, for some   and ).  NOTE: 如果 S  A, 则 $ 属于 Follow(A).
-*
-*
-*
---- Slide 43 ---
-43
-计算 First(X) :
-1.  如果  X 终结符, 则First(X) = {X}2.  如果 X   是规则, 则add  to First(X)3.  如果X 非终结符, 且 X Y1Y2…Yk 是条规则Place First(Y1) in First(X)if Y1 ,     Place First(Y2) in First(X)if Y2  ,     Place First(Y3) in First(X)…if Yk-1  ,     Place First(Yk) in First(X)NOTE: As soon as Yi   ,  Stop.
-*
-*
-*
-*
---- Slide 44 ---
-44
-First(X1 X2 … Xn ) = First (X1)  “+”                                    First(X2)  if  is in First(X1)  “+”                                    First(X3)  if  is in First(X2)  “+”                                    …                                    First(Xn)  if  is in First(Xn-1)
---- Slide 45 ---
-45
-Example
-计算 First 集:
-First(E)
-First(TE’)
-First(T)
-First(T) “+” First(E’)
-First(F)
-First((E)) “+” First(id)
-First(F) “+” First(T’)
-“(“ and “id”
-Not First(E’) since  T  
-Not First(T’) since  F  
-*
-*
---- Slide 46 ---
-46
-Example 2
-设有如下文法:
-S   i E t SS’ | aS’  eS | E   b
-计算得
-First(S) = { i, a }First(S’) = { e,  }First(E) = { b }
---- Slide 47 ---
-47
-计算 Follow(B) :
-1.  放 $ 到Follow(S)中, 其中 S 是开始符号和 $ 标记输入的末端2.  如果有一条产生式  B  A , 那么所有在First() 中的除了 以外都在Follow(A)中.3.  如果 B  A 是产生式, 或 B  A  且     (First() contains  ), 那么 在 Follow(B)中的一切 也在 Follow(A)中。
-*
---- Slide 48 ---
-48
-1.对所有非终结符 X 初始化 Follow(X)为空集。放 $到 Follow(S)中, 其中 S 是开始非终结符.2. 重复如下步骤直到对任何Follow-set都没有变化发生。	For 任一产生式 X  X1 X2 … Xm		 For j=1 to m,			if Xj 是非终结符 then		 Follow(Xj)=Follow(Xj)(First(Xj+1,…,Xm)-{});		  If First(Xj+1,…,Xm) 含有  或 Xj+1,…,Xm=  			then Follow(Xj)=Follow(Xj) Follow(X);
---- Slide 49 ---
-49
-Example
-Compute Follow for:
-FollowE	$ )E’	$ )T	+ $ )T’	+ $ )F	+ * $ )
-FirstE	(  idE’	 +T	(  idT’	 *F	(  id
---- Slide 50 ---
-50
-Example
-S   i E t SS’ | aS’  eS | E   b
-First(S) = { i, a }First(S’) = { e,  }First(E) = { b }
-Follow(S) – Contains $, since S is start symbol       Since S   i E t SS’ ,  put in First(S’) – not        Since S’  , Put in Follow(S)       Since S’  eS, put in Follow(S’)      So…. Follow(S) = { e, $ }Follow(S’) = Follow(S)   HOW?Follow(E) = { t }
-*
---- Slide 51 ---
-51
-First:
-Follow:
-用于指示非终结符（在栈中）和输入符号（在输入流中）的关系
-Example:  如果  A   ,  和  a 在 First()中, 那么当 a=input,用  (在栈中) 替换 A。( a 是的第一个符号, 如此 当A 在栈上 和 a 是输入,  弹出 A 并推入 .
-当 First 有冲突时被使用, 用于解决选择.  当   或   ,  那么跟随 A  的符号决定下一选择.
-Example:  If  A   ,  and  b is in Follow(A ), then when     and b is an input character, then we expand A with  , which will eventually expand to , of which b follows!  (   : check whether First( ) contains .)
-*
-*
-*
---- Slide 52 ---
-52
-构造LL（1）分析表
-Algorithm:对每条规则 A重复2 & 3步骤 终结符 a 在 First()?  加 A  到 M[A, a ]3.1   在 First()?  对所有在Follow(A)中的终结符b加A  到 M[A, b ].3.2  在 First() 和$ 在Follow(A)? 加A  到 M[A, $ ]4.  所有无定义的项是 errors.
---- Slide 53 ---
-53
-Example
-First(E,F,T) = { (, id }First(E’) = { +,  }First(T’) = { *,  }
-Follow(E,E’) = { ), $}Follow(F) = { *, +, ), $ }Follow(T,T’) = { +, ) , $}
-Expression Example:  E  TE’ : First(TE’) = First(T) = { (, id }        M[E, ( ] : E  TE’         M[E, id ] : E  TE’ (by rule 2)   E’  +TE’ : First(+TE’) = + : M[E’, +] : E’  +TE’ (by rule 3)   E’   :  in First( )     T’   :  in First( )
-by rule 2
-M[E’, )] : E’    (3.1)     M[T’, +] : T’     (3.1)                    M[E’, $] : E’    (3.2)     M[T’, )] : T’     (3.1)(Due to Follow(E’)                                 M[T’, $] : T’     (3.2)
---- Slide 54 ---
-54
-First(E,F,T) = { (, id }First(E’) = { +,  }First(T’) = { *,  }
-Follow(E,E’) = { ), $}Follow(F) = { *, +, ), $ }Follow(T,T’) = { +, ) , $}
---- Slide 55 ---
-55
-S   i E t SS’ | aS’  eS | E   b
-First(S) = { i, a }First(S’) = { e,  }First(E) = { b }
-Follow(S) = { e, $ }Follow(S’) = { e, $ }Follow(E) = { t }
-S   i E t SS’                      S  a                       E  bFirst(i E t SS’)={i}             First(a) = {a}           First(b) = {b}S’  eS                               S  First(eS) = {e}                    First() = {}         Follow(S’) = { e, $ }
-INPUT SYMBOL
-a
-$
-t
-i
-e
-S
-S’
-E
-b
-Non-terminal
-S a
-S iEtSS’
-S’
-E b
-S’ S’ eS
---- Slide 56 ---
-56
-LL(1) Grammars
-L :  从左到右扫描输入L :  构造一个最左推导1 :  使用 “1” 个输入符号 作为前看符与栈结合决定分析器的动作LL(1) grammars == 在分析表中没有多重定义的项LL(1) 文法的性质: 文法不是而已的或左递归的 文法是 LL(1) 当 A      1.  &  不会导出以相同终结符a打头的串     2.  或  可能导出 , 但不会同时.	 3. 如果 =>*, 那么FOLLOW(A) ∩FIRST()=
-Note:  It may not be possible for a grammar to be manipulated into an LL(1) grammar
---- Slide 57 ---
-57
-错误恢复
-如果  X  终结符且与输入不匹配.如果  M[ X, Input ] 是空 – No allowable actions考虑两种恢复技术:       A.   应急方式       B.   子句级恢复
---- Slide 58 ---
-58
-error, M[F,+] = synch
-F has been popped
-error, skip +
---- Slide 59 ---
-构造分析表
-59
---- Slide 60 ---
-60
---- Slide 61 ---
-61
-表驱动的预测分析
-Empty stack symbol
-General parser behavior:    X : 栈顶符号        a : 当前输入 1.  当 X=a = $  停止分析, 接受, 成功2.  当 X=a  $ , 弹出 X, 前进输入, go to 1.3.  当 X 是个非终结符, 检查 M[X,a]如果是 error  call recovery routine如果M[X,a] = {X  UVW}, POP X, PUSH W,V,UDO NOT expend any input
---- Slide 62 ---
-62
-算法描述
---- Slide 63 ---
-63
-分析过程
-Expend Input
-
-============================================================
-第4章（续） LR分析法.ppt
-============================================================
---- Slide 1 ---
-4.5自底向上语法分析
---- Slide 2 ---
-4.6  LR分析法
-前言LR分析思想移进－归约、规范归约寻找句柄（最左直接短语）、一旦句柄在栈顶形成LR分析器能立刻查出用哪条产生式归约LR分析法的分类四种LR分析法的异同
---- Slide 3 ---
-Input
-LR 分析程序
-Stack
-Output
-分析表 action[.,.] goto[.,.]
-(输入串 + $)
-当前分析器应采取的动作依赖于栈顶与输入字符
-分析器的动作:    s : 栈顶        a : 当前输入 1.  若 action[s,a]=“accept”  报告成功！若 action[s,a]=“用产生式 A 归约” 执行以下动作:2a. 文法符号栈与状态栈分别弹出||个 符号。2b. 文法符号栈中压入A2c. Push goto[ s* ,A] ,其中s*为状态栈弹出符号后的栈顶状态若 action[s,a]=“移进状态 s* ”将a移入文法符号栈，将 s* 移入状态栈若action[s,a]=“空白”则报错
-SP
-LR分析器工作过程示意图
-参考课本图4-36代码
---- Slide 4 ---
-LR分析概述：一个LR分析器由以下三部分组成：LR分析程序对于同类的LR分析器，分析程序是相同的。分析表是核心，分为动作表(ACTION)和状态转换表(GOTO)。分析栈使用两个栈：文法符号栈、状态栈
---- Slide 5 ---
-G[S]:              S  aABe              A  Abc | b              B  d输入串 abbcde的最右推导如下:S   aABe   aAde   aAbcde   abbcde下划线标识的是每一步的句柄（唯一）.活前缀: ε, a, aA, aAB, aABe,aAd, aAb,aAbc, ab,…非活前缀: aAde, Abc, aAA,…
---- Slide 6 ---
-移进/归约分析
-$		abbcde$		移进$a		  bbcde$		移进$ab		    bcde$		归约$aA		    bcde$		移进$aAb		      cde$		移进 (?)$aAbc 		        de$		归约$aA 		        de$		移进$aAd 		          e$		归约$aAB		          e$		移进$aABe 		            $		归约$S		            $		成功
-栈
-输入串
-动作
-注意: 栈中所有的串均是活前缀。
-注意: 能归约吗？
---- Slide 7 ---
-G[S]:              S  aAcBe              A  Ab | b              B  d输入串 abbcde的最右推导如下:S   aAcBe   aAcde   aAbcde   abbcde下划线标识的是每一步的句柄（唯一）.活前缀: ε, a, aA, aAb, aAcBe,aAc, aAcd,…非活前缀: aAA,…
---- Slide 8 ---
-移进/归约分析
-$		abbcde$		移进$a		  bbcde$		移进$ab		    bcde$		归约$aA		    bcde$		移进$aAb		      cde$		归约 (?)$aA 		      cde$		移进$aAc 		        de$		移进$aAcd 		          e$		归约$aAcB		          e$		移进$aAcBe 		            $		归约$S		            $		成功
-栈
-输入串
-动作
-注意: 如何知道按哪条产生式归约？
---- Slide 9 ---
-LR(0)项集规范族的构造：LR(0)项在文法G中每个产生式的右部适当位置添加一个圆点构成项。例如：对A→XYZ对应项            A  ·XYZ	 	A  X·YZ		A  XY·Z		A  XYZ·对于A  只有项 A ·
-注意：圆点左部表示该句柄已识别部分，右部表示待识别部分。
---- Slide 10 ---
-项分类根据圆点所在的位置和圆点后是VT还是VN把项分为以下几种：移进项，形如A  α·a β， 其中α，β  V *, aVT待约项，形如A  α·B β， 其中α，β  V *, BVN归约项，形如A  α· ，其中α  V *接受项，形如S‘  S · ， S’  S 为拓广文法
---- Slide 11 ---
-LR(0)项集族的算法
-SetOfitems  CLOSURE(I){         J=I；         repeat                   for(J 中的每个项A  ·B)                            for(G中每个产生式B )                                if (项B· 不在J中)                                       将B· 加入到J中；         until 没有新的项加入J；         return J;}
---- Slide 12 ---
-void  items(G’){          C={CLOSURE({[S’  ·S] })};           repeat                 for(C中的每个项集I)                     for(每个文法符号X)                             if(GOTO(I,X)非空且不在C中)                                  将GOTO(I,X)加入C中；            until  不再有新的项集加入到C中；}
---- Slide 13 ---
-LR(0)项集规范族的构造步骤如下：变为拓广文法构造识别可归前缀的有穷自动机构造LR(0)分析表利用分析表来分析句子
---- Slide 14 ---
-LR语法分析程序
---- Slide 16 ---
-E’  E	E  E + T  |  T	T  T * F  |  F	F  ( E )  |  id
---- Slide 18 ---
-G[E]: E   Aa | bB            A   cA | d           B  cB | d
-构造LR(0)分析表并分析bcccd是否是文法的句子
---- Slide 19 ---
-SLR(1)分析：先看如下文法:S   rDD   D,iD   i它是LR(0)文法吗？如何解决冲突？
---- Slide 20 ---
-E’  E	E  E + T  |  T	T  T * F  |  F	F  ( E )  |  id
-构造SLR(1)分析表并分析i+i*i是否是文法的句子
---- Slide 21 ---
-E’  E 		closure({E’  .E}) = E  E+T		      {E’  .E	    kernel itemsE  T		        E  .E+TT  T*F	                 E  .TT  F		        T  .T*FF  (E)		        T  .F	F  id		        F  .(E)				        F  .id   }
---- Slide 22 ---
-I ={	 E’  .E,   E  .E+T,   E  .T, 		 T  .T*F,  T  .F, 		 F  .(E),   F  .id  }	goto(I, E) = { E’  E., E  E.+T }	goto(I, T) = { E  T., T  T.*F }	goto(I, F) = {T  F. }	goto(I, () = { F  (.E), E  .E+T, E  .T, T  .T*F, T  .F, 			F  .(E), F  .id  }	goto(I, id) = { F  id. }
---- Slide 23 ---
-I0: E’  .E	I1: E’  E.	I6: E  E+.T 	I9: E  E+T.      E  .E+T 	     E  E.+T 	     T  .T*F	     T  T.*F     E  .T 			     T  .F     T  .T*F	I2: E  T. 	     F  .(E) 	I10: T  T*F.     T  .F	     T  T.*F	     F  .id      F  .(E)      F  .id 	I3: T  F.	             I7: T  T*.F	  I11: F  (E). 					     F  .(E) 			I4: F  (.E) 	     F  .id 			     E  .E+T 	 			     E  .T 	I8: F  (E.)      			     T  .T*F	     E  E.+T 	     			     T  .F		     			     F  .(E)      			     F  .id 			I5: F  id.
---- Slide 24 ---
-Action Table
-Goto Table
---- Slide 25 ---
-冲突的例子
-S  L=R         I0: S’  .S           I1:S’  S.        I6:S  L=.R       I9: S  L=R.S  R		 S  .L=R		         R  .LL *R		 S  .R            I2:S  L.=R       L .*RL  id		 L  .*R	R  L.	         L  .idR  L		 L  .id			 R  .L	            I3:S  R.				            I4:L  *.R      I7:L  *R.		      问题		               R  .L	FOLLOW(R)={=,$}		L .*R        I8:R  L.	=  	shift 6			L  .id		reduce by R  L	shift/reduce conflict	            I5:L  id.
---- Slide 26 ---
-冲突的例子2
-S  AaAb	        I0:S’  .S 	S  BbBa		S  .AaAb A  			S  .BbBaB   			A  .				B  .		问题	FOLLOW(A)={a,b}	FOLLOW(B)={a,b}	a	reduce by A  		 b	reduce by A  		reduce by B  			reduce by B  	reduce/reduce conflict		reduce/reduce conflict
---- Slide 27 ---
-LR(1)分析：LR(1)项集族的构造S’  ·S ,$属于初始项集中, $为向前搜索符。构造LR(1)项集的闭包函数。I的任何项都属于CLOSURE(I)中。若有项A  ·B,a属于CLOSURE(I)， B是文法中的产生式， β  V*, b  FIRST(βa)。	则B· ,b也属于CLOSURE(I)中。转换函数的构造若  A  ·X,a  属于 I则A  X·,a 属于GOTO(I , X)。
---- Slide 28 ---
-若有 A  .,a1		         ... 					   		A  .,an可被写为		 A  .,a1/a2/.../an
---- Slide 29 ---
-(0) S’  S	(1) S  aAd	(2) S  bAc	(3) S  aec	(4) S  bed	(5) A  e
-试构造该文法的LR(1)项集族
---- Slide 30 ---
-LR(1)分析表的构造LR(1)项分为：心（ LR(0) 项）、向前搜索符集合，故LR(1)分析表的构造与LR(0)分析表的构造大部分相同,只是对LR(1)，归约动作取决于该归约项的向前搜索符集。
---- Slide 31 ---
-例1
-S  AaAb      I0:S’  .S ,$	 	I1: S’  S. ,$ 	S  BbBa	S  .AaAb ,$ A  		S  .BbBa ,$		 I2: S  A.aAb ,$ B  		A  . ,a			B  . ,b		I3: S  B.bBa ,$ I4: S  Aa.Ab ,$       I6: S  AaA.b ,$          I8: S  AaAb. ,$     A  . ,bI5: S  Bb.Ba ,$        I7: S  BbB.a ,$	 I9: S BbBa. ,$     B  . ,a
---- Slide 32 ---
-例2
-S’  S	1) S  L=R 2) S  R 3) L *R 4) L  id 5) R  L
-I0:S’  .S,$    S  .L=R,$    S  .R,$    L  .*R,$/=    L  .id,$/=    R  .L,$
-I1:S’  S.,$
-I2:S  L.=R,$    R  L.,$
-I3:S  R.,$
-I4:L *·R,$/=    R  ·L,$/=    L ·*R,$/=     L  ·id,$/=
-I5:L  id·,$/=
-I6:S  L=.R,$    R  .L,$    L  .*R,$    L  .id,$
-I7:L  *R·,$/=
-I8:  R  L·,$/=
-I9:S  L=R.,$I10:R  L·,$    I11:L  *·R,$    R  ·L,$    L ·*R,$    L  ·id,$I12:L  id·,$
-I13:L  *R·,$
-to I6
-to I7
-to I10
-to I11
-to I12
-to I13
-id
-S
-L
-L
-L
-R
-R
-R
-id
-id
-id
-R
-L
-*
-*
-*
-*
-I4  and I11I5  and I12I7  and I13I8  and  I10
---- Slide 33 ---
-LR(1) 分析表 – (例2)
-无移进-归约、归约-归约冲突	所以它是 LR(1)文法
---- Slide 34 ---
-构造LR(1)项集族的算法
-SetOfitems  CLOSURE(I){         repeat                   for(I 中的每个项[A  ·B,a])                            for(G’中每个产生式B )                                for(FIRST(βa)中的每个终结符b)                                       将[B· ,b]加入到集合I中；         until 没有更多的项加入I；         return I;}SetOfitems  GOTO(I,X){         J={};         for(I中的每个项[A  ·X,a])               将项[A  X · ,a]加入到集合J中；          return  CLOSURE(J)；}
---- Slide 35 ---
-void  items(G’){          将C初始化为{CLOSURE}({S’  ·S ,$});           repeat                 for(C中的每个项集I)                     for(每个文法符号X)                             if(GOTO(I,X)非空且不在C中)                                  将GOTO(I,X)加入C中；            until  不再有新的项集加入到C中；}
---- Slide 36 ---
-S’  S	S  AA	A  Aa  |  a
-该文法是否是LR(1)文法？若是给出分析表
---- Slide 37 ---
-L’  L	L  MLb | a	M  ε
-该文法是否是LR(1)文法？并说明原因，若是给出分析表
---- Slide 38 ---
-LALR(1)分析：问题的出现: LR(1)分析法适应的文法类广，但它可能引起状态数目的剧烈增长，为克服这一缺点，下面介绍LALR(1)分析。
---- Slide 39 ---
-看以下这个例子
-S’  S	1) S  L=R 2) S  R 3) L *R 4) L  id 5) R  L
-I0:S’  .S,$    S  L=R,$    S  .R,$    L  *R,$/=    L  id,$/=    R  .L,$
-I1:S’  S.,$
-I2:S  L.=R,$    R  L.,$
-I3:S  R.,$
-I411:L  *.R,$/=      R  .L,$/=      L .*R,$/=       L  .id,$/=
-I512:L  id.,$/=
-I6:S  L=.R,$    R  .L,$    L  .*R,$    L  .id,$
-I713:L  *R.,$/=
-I810:  R  L.,$/=
-I9:S  L=R.,$
-to I6
-to I713
-S
-L
-L
-L
-R
-R
-id
-id
-id
-R
-*
-*
-*
-心相同的状态   I4  and I11   I5  and I12   I7  and I13   I8  and  I10
---- Slide 40 ---
-LALR(1) 分析表 – (例2)
-无移进-归约、归约-归约冲突	所以它是LALR(1)文法
---- Slide 41 ---
-有关合并同心集的几个问题：同心集是心相同的项合并在一起，超前搜索符集合是他们的和集。合并同心集后，转换函数自动合并。若文法是LR(1)文法，合并同心集后若有冲突只可能是归约-归约冲突。合并同心集后对某些错误发现的时间会产生推迟现象，但错误的出现位置仍是准确的。
---- Slide 42 ---
-S’  S	S  Aa	S  dAb            S  cb	S  BB	A  c	B  Bc	B  b
-构造下列文法的LALR(1)分析表
---- Slide 43 ---
-S  aAa | aBb | bAb | bBa	A  x	B  x
-有人说，是LR(1)文法，但不是LALR(1)文法。你认为呢？为什么？
---- Slide 44 ---
-S   bASB | bA	A  dSa | b	B  cAa | c
-判别此文法是下列文法中的哪一种？并说明理由。LR(0)、SLR(1)、LALR(1)、LR(1)
---- Slide 45 ---
-本章要点
-LR分析概述LR分析法的分类及异同掌握各类分析的分析表构造以及分析过程
-
-============================================================
-第5章 语法制导翻译.ppt
-============================================================
---- Slide 1 ---
-1
-第5章  语法制导翻译
---- Slide 2 ---
-2
-语法制导定义
-语法制导定义是一个带有属性规则的文法:属性. 语义规则属性分为继承属性与综合属性.语义规则是对于一个产生式 A  :b = f (c1,…,cn)	where(b 是综合属性) b 是A的一个属性 并且 c1…cn 是 中的文法符号的属性.(b 是继承属性) b 是中某个文法符号的属性 并且 c1…cn 是 A或中的文法符号的属性.
---- Slide 3 ---
-3
-语法制导定义将属性值的计算次序隐藏在语义规则中。
---- Slide 4 ---
-4
-终结符只有综合属性，且属性值来自词法分析器.开始符号没有继承属性.在语法分析时，当调用某条产生式时，可以计算该产生式对应的语义规则.产生式	          语义规则L  E n		print(E.val)E  E1 + T		E.val = E1.val + T.val E  T			E.val = T.valT  T1 * F		T.val = T1.val * F.val T  F			T.val = F.val F  (E)		F.val = E.val 		F  digit		F.val = digit .lexval
-Example 3*5+4n
---- Slide 5 ---
-5
-语义规则里只出现综合属性，这样的语法制导定义称为S属性定义.
-S属性定义
---- Slide 6 ---
-6
-注释分析树 (5.2):
---- Slide 7 ---
-7
-L属性定义
-A X1…XnXj 的一个继承属性依赖于X1…Xj-1  的属性（继承属性或综合属性）A的继承属性所有的S属性定义是L属性定义.
---- Slide 8 ---
-8
-Example
-不是L属性定义的例子PRODUCTION	SEMANTIC RULEA  LM		L.i = f1(A.i)				M.i = f2(L.s)				A.s = f3(M.s)A  QR		R.i = f4(A.i)				Q.i = f5(R.s)				A.s = f6(Q.s)
---- Slide 9 ---
-9
-继承属性
-PRODUCTION	SEMANTIC RULED  T L		L.in = T.typeT  int 		T.type = integerT  real 		T.type = realL  L1 , id		L1.in = L.in				addtype(id.entry, L.in)L  id 		addtype(id.entry, L.in)
-Example real id1, id2 , id3
---- Slide 10 ---
-10
-Example.过程 addtype(…) 指将类型信息加入符号表
---- Slide 11 ---
-11
---- Slide 12 ---
-12
---- Slide 13 ---
-13
-依赖图
---- Slide 14 ---
-14
---- Slide 15 ---
-15
---- Slide 16 ---
-16
-assignment statement
-Figure Parse tree
-Figure Syntax tree
---- Slide 17 ---
-17
---- Slide 18 ---
-18
-5.3语法制导翻译的应用
---- Slide 19 ---
-19
---- Slide 20 ---
-20
-int[2][3]类型表达式 :     array(2,array(3,integer))产生式	           语义规则T  BC		T.t=C.t                                     C.b=B.tB  int 		B.t = integerB  float 		B.t = floatC  [num]C1 	C.t=array(num.val , C1.t)                                    C1.b=C.bC   		C.t=C.b
-类型的结构
---- Slide 21 ---
-21
---- Slide 22 ---
-22
-S属性定义的自底向上翻译
---- Slide 23 ---
-23
---- Slide 24 ---
-24
-Example
-PRODUCTION	SEMANTIC RULEL  E n			print(E.val)E  E1 + T		E.val = E1.val + T.val E  T			E.val = T.valT  T1 * F		T.val = T1.val * F.val T  F			T.val = F.val F  (E)			F.val = E.val 		F  digit		F.val = digit .lexvalPRODUCTION	CODE  FRAGMENTtL  E n			print(val[top])E  E1 + T		val[ntop] = val[top-2]+val[top] E  T			T  T1 * F		val[ntop] = val[top-2]*val[top] T  F			F  (E)			val[ntop] = val[top-1]		F  digit
-Example:3*5+4n
---- Slide 25 ---
-25
---- Slide 26 ---
-26
-翻译模式
-将语义规则嵌入到产生式的规则里.Example.expr  expr + term { print(“+”) }expr  expr - term { print(“-”) }expr  termterm  0 { print(“0”) }…term  9 { print(“9”) }
---- Slide 27 ---
-27
---- Slide 28 ---
-28
-Examples
-S  A1 {S.s = A1.s+A2.s} A2A a {A.s = 1}This will not work…On the other hand this is good:S  A1 A2 {S.s = A1.s+A2.s} A a {A.s = 1}
---- Slide 29 ---
-29
-Examples II
-S  A1 A2 {A1.in = 1; A2.in = 2}A a {print(A.in)}This will not work…On the other hand this is good:S  {A1.in = 1; A2.in = 2} A1 A2A a {print(A.in)}Or even:S  {A1.in = 1} A1 {A2.in = 2} A2A a {print(A.in)}
---- Slide 30 ---
-30
-例子
---- Slide 31 ---
-31
---- Slide 32 ---
-32
-自顶向下翻译（实现L属性定义）
---- Slide 33 ---
-33
---- Slide 34 ---
-34
-语义规则E E1 + T 	{E.val = E1.val + T.val}E E1 - T 	{E.val = E1.val - T.val}E T 		{E.val = T.val}T (E) 		{T.val = E.val}T  num 	{T.val = text.val }消除左递归以后:E T {R.i = T.val} R {E.val = R.s }R + T 	{R1.i = R.i + T.val} R1 {R.s = R1.s}R - T 	{R1.i = R.i - T.val} R1 {R.s = R1.s}R  	{R.s = R.i}T (E) 	{T.val = E.val}T  num {T.val = text.val }
-Example:9-5+2
---- Slide 35 ---
-35
---- Slide 36 ---
-36
-总结:A A1 Y  	{A.a = g(A1.a , Y.y) }A X 		{A.a = f(X.x) }转换为:A X {R.i = f(X.x)} R {A.a = R.s) }R Y {R1.i = g(R.i, Y.y)} R1 {R.s = R1.s ) }R  {R.s = R.i}
-Example:XYY
---- Slide 37 ---
-37
-E E1 + T 	{E.nptr = mknode(“+”, E1.nptr , T.nptr )}E E1 - T 	{E.nptr = mknode(“-”, E1.nptr , T.nptr )}E T 		{E.nptr = T.nptr }T (E) 		{T.nptr = E.nptr}T id 		{T.nptr = mkleaf(id, id.entry)}T num	{T.nptr = mkleaf(num, num.entry)}Translation Scheme with left recursion removed:E T { ??? } R { ??? }R + T { ??? } R1 { ??? }R - T { ??? } R1 { ??? }R  	{R.s = R.i}T (E) 	{T.nptr = E.nptr}T id 	{T.nptr = mkleaf(id, id.entry)}T num {T.nptr = mkleaf(num, num.entry)}
---- Slide 38 ---
-38
-E E1 + T 	{E.nptr = mknode(“+”, E1.nptr , T.nptr )}E E1 - T 	{E.nptr = mknode(“-”, E1.nptr , T.nptr )}E T 		{E.nptr = T.nptr }T (E) 		{T.nptr = E.nptr}T id 		{T.nptr = mkleaf(id, id.entry)}T num	{T.nptr = mkleaf(num, num.entry)}Translation Scheme with left recursion removed:E T { R.i = T.nptr } R { E.nptr =R.s}R + T { R1.i =  mknode(“+”, R.i , T.nptr )} R1 { R.s = R1.s }R - T { R1.i =  mknode(“-”, R.i , T.nptr )} R1 { R.s = R1.s }R  	{R.s = R.i}T (E) 	{T.nptr = E.nptr}T id 	{T.nptr = mkleaf(id, id.entry)}T num {T.nptr = mkleaf(num, num.entry)}
---- Slide 39 ---
-39
-(Simplified) Translation SchemeE T { R.i = T.nptr } R { E.nptr =R.s}R addop T { R1.i =  mknode(addop,lex , R.i , T.nptr )} R1 { R.s = R1.s }R  	{R.s = R.i}T (E) 	{T.nptr = E.nptr}T id 	{T.nptr = mkleaf(id, id.entry)}T num {T.nptr = mkleaf(num, num.entry)}
-main(){  E();}
-E(){  T();  R();}
-T(){if lookahead = ‘(’ then    { match(‘(’);       E(); match(‘)’); } else if lookahead = ‘id’ 	then {match(‘id’);} else if lookahead = ‘num’	then {match(‘num’);} else error}
-R(){if lookahead=‘addop’     then     { match(‘addop’);      T();      R(); }  else { }}
-Plain Predictive Parser:
---- Slide 40 ---
-40
-node main(){  return TD E();}
-node TD_E(){  nptr = T();  return R(nptr);}
-node T(){if lookahead = ‘(’ then    { match(‘(’);       nptr= TD E(); match(‘)’); } else if lookahead = ‘id’ 	then { match(‘id’);               label = lexval;	       nptr=mkleaf(label);} else if lookahead = ‘num’	then { match(‘num’);               label = lexval;	       nptr=mkleaf(label);} else error; return nptr}
-node R(i:node){var il,s:node;if lookahead=‘addop’     then     { match(‘addop’);      addoplex=lexval;      nptr = T();      il = mknode(addoplex,i,nptr);      s = R(il); }  else { s=i } return s}
---- Slide 41 ---
-41
-用递归下降语法分析器实现翻译
-输入：进行预测分析的一个文法的语法制导翻译方案输出：语法制导翻译器生成的代码方法：	1。对每个非终结符A，构造一个函数。使得函数A的形参与每个继承属性对应，函数A的返回值是A的综合属性。该函数对于在A的相应产生式规则中出现的每个文法符号的每个属性都定义一个局部变量。	2。对于非终结符A的代码决定在当前的输入符号下使用什么产生式。
---- Slide 42 ---
-42
-3。与每个产生式结合的代码如下。我们按从左到右的次序考虑该产生式右部的token，非终结符，和动作。	①对于token X，若有综合属性x，则将x的值保存在与X.x对应的变量中。然后生成一个匹配token X与当前输入的一个调用。	②对于非终结符B，生成一个其右部是函数调用的赋值语句		c:=B( b1, b2,…, bk)	其中， b1, b2,…, bk是关于B的继承属性的变量，c是用于B的综合属性的变量。	③对于一个动作，复制该动作到分析器，用相关属性的变量替换对该属性的每次引用。
---- Slide 43 ---
-While循环语句的SDD
-S while(C) S1      L1 =new();                              L2 =new();                                             S1.next= L1;                               C.false=S.next                               C.true= L2 S.code=label L1 C.code  label L2   S1.code
-43
-While循环语句的SDD
---- Slide 44 ---
-While循环语句的SDT
-S while({L1 =new();L2 =new();C.false=S.next;C.true= L2 }C) {S1.next= L1;}S1      {S.code=label L1 C.code  label L2   S1.code  }
-44
---- Slide 45 ---
-另一种While循环语句的SDT
-S while({L1 =new();L2 =new();C.false=S.next;C.true= L2 Print(“label”, L1)}C) {S1.next= L1; Print(“label”, L2)}S1
-45
---- Slide 46 ---
-5.5.3
-46
---- Slide 47 ---
-47
---- Slide 48 ---
-5.5.4
-48
---- Slide 49 ---
-49
-
-============================================================
-第6章 中间代码生成.ppt
-============================================================
---- Slide 1 ---
-1
-中间代码生成
---- Slide 2 ---
-2
-编译器的前端与后端
---- Slide 3 ---
-3
---- Slide 4 ---
-4
-语法树, DAG 后缀表达式可以看做语法树的一种线性表示 			a b c uminus * b c uminus * + assign
---- Slide 5 ---
-5
---- Slide 6 ---
-6
---- Slide 7 ---
-7
---- Slide 8 ---
-8
-三地址代码
-形如: 		x : = y op z    ; Other types of three-address statement
---- Slide 9 ---
-9
-翻译时生成临时变量: x + y * z 			t1 := y * z			t2 := x + t1 DAG
---- Slide 10 ---
-10
-生成三地址语句
---- Slide 11 ---
-11
-表达式的三地址代码
---- Slide 12 ---
-12
-newtemp() 生成临时变量: t1, t2, …gen() 生成中间代码
---- Slide 13 ---
-13
-生成四元式
---- Slide 14 ---
-14
-E.g.Ternary operation x[i] := y requires two entries in the triple structure and x := y[i] requires two operations.
---- Slide 15 ---
-15
-Other representations. Indirect triples use a list of pointers to triples instead of triple themselvesThe usage of different representation is a matter of how much indirection we want to use in our compilerIt could be a problem when we use optimization in output code.Moving a temporary that represents a statement requires to change all the references in the triples
---- Slide 16 ---
-6.3.3类型声明
-16
---- Slide 17 ---
-计算类型及宽度
-int[2][3]类型表达式 :     array(2,array(3,integer))产生式	           语义规则T  B              {t=B.type  ;  w=B.width;}        C	           {T.type=C.type;  T.width=C.width}                          B  int            {B.type = integer ; B.widty=4}		B  float 	 {B.type = float ; B.widty=8}C  [num]C1 	{C.type=array(num.value, C1.type);                           C.width=num.value*C1.width}C   		{C.type=t ; C.width=w;}
-17
---- Slide 18 ---
-计算声明变量的相对地址
-18
---- Slide 19 ---
-19
-赋值语句翻译
---- Slide 20 ---
-增量生成表达式的三地址语句
-20
---- Slide 21 ---
-21
-数组地址计算
-1维数组: 	base + (i-low)  w = i  w + (base –low  w) = i  w +c2维数组
---- Slide 22 ---
-22
-整理成K维数组A[i1, i2, ..,ik]   ((…((i1n2 + i2)n3+i3)…)nk+ik)  w +                     base –((…((low1n2+low2)n3+low3)…)nk+lowk)  w
---- Slide 23 ---
-23
---- Slide 24 ---
-处理数组引用的语义规则
-24
---- Slide 25 ---
-25
---- Slide 26 ---
-6.5类型检查
-26
---- Slide 27 ---
-27
-类型表达式
-int[2][3]  array(2,array(3,integer))
-类型表达式可以是基本的数据类型也可以带有结构。基本的数据类型 (boolean, char, integer and real) 是类型表达式类型名字也是类型表达式记录或结构与数组的类型表达式 E.g.:
---- Slide 28 ---
-28
---- Slide 29 ---
-29
---- Slide 30 ---
-30
-中间代码生成
-布尔表达式的翻译 控制流语句的翻译（如if，while）Case 语句的翻译 回填技术过程调用的翻译
---- Slide 31 ---
-31
-布尔表达式
-关系运算E1 relop E2布尔运输：与或非语法规则:			E  E or E | E and E | not E | (E) | id relop id | true | false		relop   {, , , , , }
---- Slide 32 ---
-32
-1/0数值表示真假
-1/0 表示真假
---- Slide 33 ---
-33
-使用数值表示真值的SDT:
---- Slide 34 ---
-34
-Example 8.3 (pp. 490)
---- Slide 35 ---
-35
-控制流：if与while
-语法规则:首先翻译布尔表达式B为 TAC (三地址码) B有两个属性: B.true and B.false S 代表语句，S.code表示对应的三地址码
---- Slide 36 ---
-36
---- Slide 37 ---
-37
---- Slide 38 ---
-38
-首先翻译B的三地址码
---- Slide 39 ---
-39
---- Slide 40 ---
-40
---- Slide 41 ---
-41
---- Slide 42 ---
-42
-Example 8.4 and 8.5:
---- Slide 43 ---
-43
-Case 语句的翻译
-syntax directed translation
-(next slide)
---- Slide 44 ---
-44
---- Slide 45 ---
-45
---- Slide 46 ---
-46
-回填技术：Backpatching
-回填：当生成三地址码的过程中出现跳转的目标地址未知的时候，先空着，直到这个地址已知的时候，回头填入的方法。这种方法提高编译效率，能够扫描源程序一次的情况下，填入所有的语句的数组下标地址。
---- Slide 47 ---
-47
-完成回填的三个函数: makelist(i) merge(p1, p2) bapckpatch(p, i) M 的作用综合属性E.truelist and E.falselist 作为布尔表达式的跳转地址。M.instr (或者M.instr)记录E2.code的第一条语句地址 变量nextinstr （或者nextinstr）存储下一条三地址码的地址
---- Slide 48 ---
-48
---- Slide 49 ---
-49
-Example (Fig. 6.44):
---- Slide 50 ---
-50
-控制流语句的翻译
---- Slide 51 ---
-51
-过程调用的翻译
